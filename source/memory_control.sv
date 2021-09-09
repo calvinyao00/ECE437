@@ -41,12 +41,16 @@ import cpu_types_pkg::*;
       ccif.ramaddr = ccif.daddr;
       ccif.dwait = (ccif.ramstate == BUSY || ccif.ramstate == ERROR);
       ccif.dload = ccif.ramload;
+      if(ccif.iREN)
+        ccif.iwait = 1;
     end
     else if(ccif.dWEN) begin
       ccif.ramWEN = ccif.dWEN;
       ccif.ramaddr = ccif.daddr;
       ccif.dwait = (ccif.ramstate == BUSY || ccif.ramstate == ERROR);
       ccif.ramstore = ccif.dstore;
+      if(ccif.iREN)
+        ccif.iwait = 1;
     end
     else if (ccif.iREN) begin
       ccif.ramREN = ccif.iREN;
