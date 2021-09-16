@@ -19,11 +19,17 @@
 `timescale 1 ns / 1 ns
 
 module system_tb;
+import cpu_types_pkg::*;
   // clock period
   parameter PERIOD = 20;
 
   // signals
   logic CLK = 1, nRST;
+
+  opcode_t opcode;
+  assign opcode = opcode_t'(cuif.imemload[31:26]);
+  funct_t func;
+  assign func = funct_t'(cuif.imemload[5:0]);
 
   // clock
   always #(PERIOD/2) CLK++;
@@ -48,9 +54,9 @@ module system_tb;
     // Since single cycle, this is just PC enable
     .wb_stall(~DUT.CPU.DP.pc0_en),
     // The 'funct' portion of an instruction. Must be of funct_t type
-    .funct(DUT.CPU.DP.funct),
+    .funct(func),
     // The 'opcode' portion of an instruction. Must be of opcode_t type
-    .opcode(DUT.CPU.DP.op_code),
+    .opcode(opcode),
     // The 'rs' portion of an instruction
     .rs(DUT.CPU.DP.rs),
     // The 'rt' portion of an instruction

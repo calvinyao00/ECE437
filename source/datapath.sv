@@ -43,7 +43,7 @@ module datapath (
 
   assign SignedExt = cuif.imm[15] ? {16'hffff, cuif.imm} : {16'h0000, cuif.imm};
   assign ZeroExt = {16'h0000, cuif.imm};
-  assign JumpAddr = {pcif.npc[31:28], dpif.imemload[25:0], 2'b00};
+  assign JumpAddr = {pcif.npc[31:28], dpif.addr, 2'b00};
   assign BranchAddr = {cuif.imm[29:0], 2'b00};
   
   // Datapath DUT

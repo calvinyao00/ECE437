@@ -10,7 +10,7 @@ interface control_unit_if;
 
 // request unit signals
   // hit and enable
-  word_t              imemload, shamt;
+  word_t              imemload, shamt, addr;
 
   logic               halt, WEN, dWEN, dREN, RegWrite, MemtoReg, lui;
 
@@ -26,12 +26,12 @@ interface control_unit_if;
   // control unit ports
   modport  cu (
     input   imemload,
-    output  shamt, halt, RegDst, WEN, dWEN, dREN, RegWrite, MemtoReg, lui, aluop, rs, rt, rd, ALUsrc, PCsrc, imm
+    output  shamt, addr, halt, RegDst, WEN, dWEN, dREN, RegWrite, MemtoReg, lui, aluop, rs, rt, rd, ALUsrc, PCsrc, imm
   );
 
   modport  tb (
     output   imemload,
-    input  shamt, halt, RegDst, WEN, dWEN, dREN, RegWrite, MemtoReg, lui, aluop, rs, rt, rd, ALUsrc, PCsrc, imm
+    input  shamt, addr, halt, RegDst, WEN, dWEN, dREN, RegWrite, MemtoReg, lui, aluop, rs, rt, rd, ALUsrc, PCsrc, imm
   );
 
 endinterface
