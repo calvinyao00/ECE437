@@ -4,7 +4,7 @@ module program_counter
 import cpu_types_pkg::*;
 (
     input logic clk,
-    input logic nRST
+    input logic nRST,
     program_counter_if.pc pcif
 );
 

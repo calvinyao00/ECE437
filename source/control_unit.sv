@@ -47,7 +47,7 @@ always_comb begin
                 cuif.RegWrite = 1;
             end
             JR: begin
-                PCsrc = 2'd2; // JR
+                cuif.PCsrc = 2'd2; // JR
             end
             ADD: begin
                 cuif.aluop = ALU_ADD;
@@ -152,17 +152,11 @@ always_comb begin
                 cuif.aluop = ALU_ADD;
                 cuif.ALUsrc = 2'd2;
             end
-            LBU:
-            LHU:
-            SB:
-            SH:
             SW: begin
                 cuif.dWEN = 1;
                 cuif.aluop = ALU_ADD;
                 cuif.ALUsrc = 2'd2;
             end
-            LL:
-            SC:
             HALT: begin
                 cuif.halt = 1'b1;
             end
