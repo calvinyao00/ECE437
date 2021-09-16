@@ -15,12 +15,12 @@ begin
         ruif.dmemREN <= 0;
         ruif.dmemWEN <= 0;
     end
-    else if(ruif.ihit == 0) begin
+    else if(ruif.ihit == 1) begin
         ruif.imemREN <= 1;
         ruif.dmemREN <= ruif.dREN;
         ruif.dmemWEN <= ruif.dWEN;
     end
-    else if(ruif.dhit == 0) begin
+    else if(ruif.dhit == 1) begin
         ruif.imemREN <= 1;
         ruif.dmemREN <= 0;
         ruif.dmemWEN <= 0;

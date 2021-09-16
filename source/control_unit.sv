@@ -3,8 +3,6 @@
 module control_unit
 import cpu_types_pkg::*;
 (
-    input logic clk,
-    input logic nRST
     control_unit_if.cu cuif
 );
 
@@ -31,14 +29,13 @@ always_comb begin
     cuif.RegWrite = 0;
     cuif.MemtoReg = 0;
     cuif.lui = 0;
-    cuif.jal = 0;
 
     if(opcode == RTYPE) begin
         cuif.rs = cuif.imemload[25:21];
         cuif.rt = cuif.imemload[20:16];
         cuif.rd = cuif.imemload[15:11];
         cuif.shamt = {'0, cuif.imemload[10:6]};
-        casez(func) begin
+        casez(func) 
             SLLV: begin
                 cuif.aluop = ALU_SLL;
                 cuif.ALUsrc = 2'b1;
@@ -50,7 +47,7 @@ always_comb begin
                 cuif.RegWrite = 1;
             end
             JR: begin
-                PCsrc = 2'b10; // JR
+                PCsrc = 2'd2; // JR
             end
             ADD: begin
                 cuif.aluop = ALU_ADD;
@@ -92,7 +89,7 @@ always_comb begin
                 cuif.aluop = ALU_SLTU;
                 cuif.RegWrite = 1;
             end
-        end
+        endcase
     end
     else if ((opcode != J) && (opcode != JAL)) begin
         // i type
@@ -100,7 +97,7 @@ always_comb begin
         cuif.rs = cuif.imemload[25:21];
         cuif.rt = cuif.imemload[20:16];
         cuif.imm = cuif.imemload[15:0];
-        casez(opcode) begin
+        casez(opcode)
             BEQ: begin
                 cuif.PCsrc = 3'd5; 
                 cuif.aluop = ALU_SUB;
@@ -169,7 +166,7 @@ always_comb begin
             HALT: begin
                 cuif.halt = 1'b1;
             end
-        end
+        endcase
     end
     else if (opcode == J) begin
         cuif.addr = cuif.imemload[25:0];
@@ -179,7 +176,7 @@ always_comb begin
         cuif.addr = cuif.imemload[25:0];
         cuif.RegWrite = 1;
         cuif.RegDst = 2'b10;
-        cuif.jal = 1;
+        cuif.PCsrc = 3'd3;
     end
 end
 

@@ -27,6 +27,89 @@ module datapath (
   // pc init
   parameter PC_INIT = 0;
 
-  assign rfif.wsel = (cuif.RegDst == '0) ? cuif.rt : (cuif.RegDst == 2'b1 ? cuif.rd : 5'd31);
+  alu_if_t aif();
+  control_unit_if cuif();
+  program_counter_if pcif();
+  register_file_if rfif();
+  request_unit_if ruif();
 
+  alu ALU(nRST, aif);
+  control_unit CONTROL(cuif);
+  request_unit REQUEST(CLK, nRST, ruif);
+  register_file REGISTER(CLK, nRST, rfif);
+  program_counter PC(CLK, nRST, pcif);
+
+  word_t SignedExt, ZeroExt, JumpAddr, BranchAddr;
+
+  assign SignedExt = cuif.imm[15] ? {16'hffff, cuif.imm} : {16'h0000, cuif.imm};
+  assign ZeroExt = {16'h0000, cuif.imm};
+  assign JumpAddr = {pcif.npc[31:28], dpif.imemload[25:0], 2'b00};
+  assign BranchAddr = {cuif.imm[29:0], 2'b00};
+  
+  // Datapath DUT
+  always_ff @ (posedge CLK, negedge nRST) begin
+    if(!nRST) begin
+      dpif.halt <= 0;
+    end
+    else begin
+      dpif.halt <= cuif.halt;
+    end
+  end
+  assign dpif.imemREN = ruif.imemREN;
+  assign dpif.imemaddr = pcif.PC;
+  assign dpif.dmemREN = ruif.dmemREN;
+  assign dpif.dmemWEN = ruif.dmemWEN;
+  assign dpif.dmemstore = rfif.rdat2;
+  assign dpif.dmemaddr = aif.portOut;
+  // Control Unit DUT
+  assign cuif.imemload = dpif.imemload;
+  // ALU DUT
+  assign aif.portA = rfif.rdat1;
+  always_comb begin
+    casez(cuif.ALUsrc)
+      2'd3: aif.portB = ZeroExt;
+      2'd2: aif.portB = SignedExt;
+      2'd1: aif.portB = cuif.shamt;
+      2'd0: aif.portB = rfif.rdat2;
+    endcase
+  end
+  assign aif.op = cuif.aluop;
+  // Request Unit DUT
+  assign ruif.ihit = dpif.ihit;
+  assign ruif.dhit = dpif.dhit;
+  assign ruif.dREN = cuif.dREN;
+  assign ruif.dWEN = cuif.dWEN;
+  // Register File DUT
+  assign rfif.WEN = cuif.RegWrite;
+  assign rfif.wsel = (cuif.RegDst == '0) ? cuif.rt : (cuif.RegDst == 2'b1 ? cuif.rd : 5'd31);
+  assign rfif.rsel1 = cuif.rs;
+  assign rfif.rsel2 = cuif.rt;
+  always_comb begin
+    if(cuif.lui) rfif.wdat = {cuif.imm, 16'b0};
+    else if(cuif.MemtoReg) rfif.wdat = dpif.dmemload;
+    else if(cuif.RegDst == 2'b10) rfif.wdat = pcif.npc;
+    else rfif.wdat = aif.portOut;
+  end
+  // PC DUT
+  always_comb begin
+    casez(cuif.PCsrc) 
+      3'd2: begin
+        pcif.newpc = rfif.rdat1;
+      end
+      3'd3: begin
+        pcif.newpc = JumpAddr;
+      end
+      3'd4: begin
+        if(~aif.flagZero) pcif.newpc = pcif.npc + BranchAddr;
+        else pcif.newpc = pcif.npc;
+      end
+      3'd5: begin
+        if(aif.flagZero) pcif.newpc = pcif.npc + BranchAddr;
+        else pcif.newpc = pcif.npc;
+      end
+      default: pcif.newpc = pcif.npc;
+    endcase
+  end
+  assign pcif.pcEN = ruif.pcEN;
+  
 endmodule

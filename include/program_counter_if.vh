@@ -16,7 +16,7 @@ interface program_counter_if;
   logic               pcEN;
   // datapath ports
   modport  pc (
-    input   newpc, pcEN
+    input   newpc, pcEN,
     output  npc, PC
   );
 
