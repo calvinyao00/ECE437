@@ -4,7 +4,7 @@ module request_unit
 import cpu_types_pkg::*;
 (
     input logic clk,
-    input logic nRST
+    input logic nRST,
     request_unit_if.ru ruif
 );
 
