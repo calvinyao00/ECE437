@@ -9,6 +9,8 @@
 
 // interface
 `include "system_if.vh"
+`include "datapath_cache_if.vh"
+`include "register_file_if.vh"
 
 // types
 `include "cpu_types_pkg.vh"
@@ -28,6 +30,8 @@ module system_tb;
 
   // interface
   system_if syif();
+  datapath_cache_if dcif();
+  register_file_if rfif();
 
   // test program
   test                                PROG (CLK,nRST,syif);
@@ -37,7 +41,7 @@ module system_tb;
   system                              DUT (CLK,nRST,syif);
 
   // CPU Tracker. Uncomment and change signal names to enable.
-  /*
+  
   cpu_tracker                         cpu_track0 (
     // No need to change this
     .CLK(DUT.CPU.DP.CLK),
@@ -54,7 +58,7 @@ module system_tb;
     // The final selected wsel
     .wsel(DUT.CPU.DP.rfif.wsel),
     // Make sure the interface (dpif) matches your name
-    .instr(DUT.CPU.DP.dpif.imemload),
+    .instr(DUT.CPU.DP.dcif.imemload),
     // Connect the PC to this
     .pc(DUT.CPU.DP.PC0),
     // Connect the next PC value (the next registered value) here
@@ -67,17 +71,17 @@ module system_tb;
     // The branch target (aka offset added to npc)
     .branch_addr(DUT.CPU.DP.pc_branch),
     // Make sure the interface (dpif) matches your name
-    .dat_addr(DUT.CPU.DP.dpif.dmemaddr),
+    .dat_addr(DUT.CPU.DP.dcif.dmemaddr),
     // Make sure the interface (dpif) matches your name
-    .store_dat(DUT.CPU.DP.dpif.dmemstore),
+    .store_dat(DUT.CPU.DP.dcif.dmemstore),
     // Make sure the interface (dpif) matches your name
     .reg_dat(DUT.CPU.DP.rfif.wdat),
     // Make sure the interface (dpif) matches your name
-    .load_dat(DUT.CPU.DP.dpif.dmemload),
+    .load_dat(DUT.CPU.DP.dcif.dmemload),
     // Make sure the interface (dpif) matches your name
-    .dhit(DUT.CPU.DP.dpif.dhit)
+    .dhit(DUT.CPU.DP.dcif.dhit)
   );
-  */
+  
 
 `else
   system                              DUT (,,,,//for altera debug ports
