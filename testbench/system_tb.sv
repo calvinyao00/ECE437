@@ -11,6 +11,11 @@
 `include "system_if.vh"
 `include "datapath_cache_if.vh"
 `include "register_file_if.vh"
+`include "datapath_cache_if.vh"
+`include "alu_if.vh"
+`include "control_unit_if.vh"
+`include "program_counter_if.vh"
+`include "request_unit_if.vh"
 
 // types
 `include "cpu_types_pkg.vh"
@@ -26,18 +31,17 @@ import cpu_types_pkg::*;
   // signals
   logic CLK = 1, nRST;
 
-  opcode_t opcode;
-  assign opcode = opcode_t'(cuif.imemload[31:26]);
-  funct_t func;
-  assign func = funct_t'(cuif.imemload[5:0]);
 
   // clock
   always #(PERIOD/2) CLK++;
 
   // interface
   system_if syif();
-  datapath_cache_if dcif();
+  /*datapath_cache_if dpif();
   register_file_if rfif();
+  request_unit_if ruif();
+  program_counter_if pcif();
+  control_unit_if cuif();*/
 
   // test program
   test                                PROG (CLK,nRST,syif);
@@ -52,40 +56,40 @@ import cpu_types_pkg::*;
     // No need to change this
     .CLK(DUT.CPU.DP.CLK),
     // Since single cycle, this is just PC enable
-    .wb_stall(~DUT.CPU.DP.pc0_en),
+    .wb_stall(~DUT.CPU.DP.ruif.pcEN),
     // The 'funct' portion of an instruction. Must be of funct_t type
-    .funct(func),
+    .funct(DUT.CPU.DP.cuif.func),
     // The 'opcode' portion of an instruction. Must be of opcode_t type
-    .opcode(opcode),
+    .opcode(DUT.CPU.DP.cuif.opcode),
     // The 'rs' portion of an instruction
-    .rs(DUT.CPU.DP.rs),
+    .rs(DUT.CPU.DP.cuif.rs),
     // The 'rt' portion of an instruction
-    .rt(DUT.CPU.DP.rt),
+    .rt(DUT.CPU.DP.cuif.rt),
     // The final selected wsel
     .wsel(DUT.CPU.DP.rfif.wsel),
     // Make sure the interface (dpif) matches your name
-    .instr(DUT.CPU.DP.dcif.imemload),
+    .instr(DUT.CPU.DP.dpif.imemload),
     // Connect the PC to this
-    .pc(DUT.CPU.DP.PC0),
+    .pc(DUT.CPU.DP.pcif.PC),
     // Connect the next PC value (the next registered value) here
-    .npc(DUT.CPU.DP.pc_selected),
+    .npc(DUT.CPU.DP.pcif.newpc),
     // The final imm/shamt signals
     // This means it should already be shifted/extended/whatever
-    .imm(DUT.CPU.DP.imm_shamt_out),
-    .shamt(DUT.CPU.DP.imm_shamt_out),
-     .lui(DUT.CPU.DP.imm),
+    .imm(DUT.CPU.DP.cuif.imm),
+    .shamt(DUT.CPU.DP.cuif.shamt),
+     .lui(DUT.CPU.DP.cuif.imm[15:0]),
     // The branch target (aka offset added to npc)
-    .branch_addr(DUT.CPU.DP.pc_branch),
+    .branch_addr(DUT.CPU.DP.cuif.BranchAddr),
     // Make sure the interface (dpif) matches your name
-    .dat_addr(DUT.CPU.DP.dcif.dmemaddr),
+    .dat_addr(DUT.CPU.DP.dpif.dmemaddr),
     // Make sure the interface (dpif) matches your name
-    .store_dat(DUT.CPU.DP.dcif.dmemstore),
+    .store_dat(DUT.CPU.DP.dpif.dmemstore),
     // Make sure the interface (dpif) matches your name
     .reg_dat(DUT.CPU.DP.rfif.wdat),
     // Make sure the interface (dpif) matches your name
-    .load_dat(DUT.CPU.DP.dcif.dmemload),
+    .load_dat(DUT.CPU.DP.dpif.dmemload),
     // Make sure the interface (dpif) matches your name
-    .dhit(DUT.CPU.DP.dcif.dhit)
+    .dhit(DUT.CPU.DP.dpif.dhit)
   );
   
 

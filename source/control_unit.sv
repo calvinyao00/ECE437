@@ -6,10 +6,10 @@ import cpu_types_pkg::*;
     control_unit_if.cu cuif
 );
 
-opcode_t opcode;
-assign opcode = opcode_t'(cuif.imemload[31:26]);
-funct_t func;
-assign func = funct_t'(cuif.imemload[5:0]);
+//opcode_t opcode;
+assign cuif.opcode = opcode_t'(cuif.imemload[31:26]);
+//funct_t func;
+assign cuif.func = funct_t'(cuif.imemload[5:0]);
 
 always_comb begin
     cuif.halt = 0;
@@ -29,13 +29,16 @@ always_comb begin
     cuif.RegWrite = 0;
     cuif.MemtoReg = 0;
     cuif.lui = 0;
+    cuif.SignedExt = '0;
+    cuif.ZeroExt = '0;
+    cuif.BranchAddr = '0;
 
-    if(opcode == RTYPE) begin
+    if(cuif.opcode == RTYPE) begin
         cuif.rs = cuif.imemload[25:21];
         cuif.rt = cuif.imemload[20:16];
         cuif.rd = cuif.imemload[15:11];
-        cuif.shamt = {'0, cuif.imemload[10:6]};
-        casez(func) 
+        cuif.shamt = cuif.imemload[10:6];
+        casez(cuif.func) 
             SLLV: begin
                 cuif.aluop = ALU_SLL;
                 cuif.ALUsrc = 2'b1;
@@ -91,13 +94,16 @@ always_comb begin
             end
         endcase
     end
-    else if ((opcode != J) && (opcode != JAL)) begin
+    else if ((cuif.opcode != J) && (cuif.opcode != JAL)) begin
         // i type
         cuif.RegDst = 2'b1; // decide wsel
         cuif.rs = cuif.imemload[25:21];
         cuif.rt = cuif.imemload[20:16];
-        cuif.imm = cuif.imemload[15:0];
-        casez(opcode)
+        cuif.imm = {16'h0000, cuif.imemload[15:0]};
+        cuif.SignedExt = cuif.imemload[15] ? {16'hffff, cuif.imemload[15:0]} : {16'h0000, cuif.imemload[15:0]};
+        cuif.ZeroExt = {16'h0000, cuif.imemload[15:0]};
+        cuif.BranchAddr = {14'h0000, cuif.imemload[15:0], 2'b00};
+        casez(cuif.opcode)
             BEQ: begin
                 cuif.PCsrc = 3'd5; 
                 cuif.aluop = ALU_SUB;
@@ -162,11 +168,11 @@ always_comb begin
             end
         endcase
     end
-    else if (opcode == J) begin
+    else if (cuif.opcode == J) begin
         cuif.addr = cuif.imemload[25:0];
         cuif.PCsrc = 3'd3;
     end
-    else if (opcode == JAL) begin
+    else if (cuif.opcode == JAL) begin
         cuif.addr = cuif.imemload[25:0];
         cuif.RegWrite = 1;
         cuif.RegDst = 2'b10;

@@ -11,22 +11,20 @@ import cpu_types_pkg::*;
 always_ff @ (posedge clk, negedge nRST)
 begin
     if(!nRST) begin
-        ruif.imemREN <= 0;
         ruif.dmemREN <= 0;
         ruif.dmemWEN <= 0;
     end
     else if(ruif.ihit == 1) begin
-        ruif.imemREN <= 1;
         ruif.dmemREN <= ruif.dREN;
         ruif.dmemWEN <= ruif.dWEN;
     end
     else if(ruif.dhit == 1) begin
-        ruif.imemREN <= 1;
         ruif.dmemREN <= 0;
         ruif.dmemWEN <= 0;
     end
 end
 
 assign ruif.pcEN = ruif.ihit;
+assign ruif.imemREN = 1;
 
 endmodule
