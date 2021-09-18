@@ -40,6 +40,7 @@ module datapath (
   program_counter PC(CLK, nRST, pcif);
 
   word_t JumpAddr;
+  logic nxt_halt;
 
   assign JumpAddr = {pcif.npc[31:28], dpif.imemload[25:0], 2'b00};
   
@@ -63,10 +64,11 @@ module datapath (
   assign ruif.dhit = dpif.dhit;
   assign ruif.dREN = cuif.dREN;
   assign ruif.dWEN = cuif.dWEN;
+  assign ruif.halt = cuif.halt;
   // Register File DUT
   always_comb begin 
     if(cuif.MemtoReg) begin
-      if(dpif.dhit) rfif.WEN = cuif.RegWrite;
+      if(dpif.dhit | dpif.ihit) rfif.WEN = cuif.RegWrite;
       else rfif.WEN = 0;
     end
     else begin
@@ -113,6 +115,7 @@ module datapath (
       dpif.halt <= cuif.halt;
     end
   end
+
   assign dpif.imemREN = ruif.imemREN;
   assign dpif.imemaddr = pcif.PC;
   assign dpif.dmemREN = ruif.dmemREN;

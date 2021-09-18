@@ -25,12 +25,11 @@ import cpu_types_pkg::*;
   parameter CPUS = 1;
 
   always_comb begin
-    ccif.iwait = 0;
     ccif.dwait = 0;
     ccif.iload = '0;
     ccif.dload = '0;
     ccif.ramstore = '0;
-    ccif.ramaddr = '0;
+    ccif.ramaddr = '0; //////'0
     ccif.ramWEN = 0;
     ccif.ramREN = 0;
     ccif.ccwait = 0;
@@ -41,23 +40,20 @@ import cpu_types_pkg::*;
       ccif.ramaddr = ccif.daddr;
       ccif.dwait = (ccif.ramstate == BUSY || ccif.ramstate == ERROR);
       ccif.dload = ccif.ramload;
-      if(ccif.iREN)
-        ccif.iwait = 1;
     end
     else if(ccif.dWEN) begin
       ccif.ramWEN = ccif.dWEN;
       ccif.ramaddr = ccif.daddr;
       ccif.dwait = (ccif.ramstate == BUSY || ccif.ramstate == ERROR);
       ccif.ramstore = ccif.dstore;
-      if(ccif.iREN)
-        ccif.iwait = 1;
     end
-    else if (ccif.iREN) begin
+    else begin//if (ccif.iREN) begin
       ccif.ramREN = ccif.iREN;
       ccif.ramaddr = ccif.iaddr;
-      ccif.iwait = (ccif.ramstate == BUSY || ccif.ramstate == ERROR);
       ccif.iload = ccif.ramload;
     end
+
+    ccif.iwait = (ccif.ramstate == ACCESS) ? !((!ccif.dREN) & (!ccif.dWEN) & ccif.iREN) : 1;
   end
 
 endmodule

@@ -94,7 +94,7 @@ always_comb begin
             end
         endcase
     end
-    else if ((cuif.opcode != J) && (cuif.opcode != JAL)) begin
+    else begin
         // i type
         cuif.RegDst = 2'b1; // decide wsel
         cuif.rs = cuif.imemload[25:21];
@@ -166,17 +166,17 @@ always_comb begin
             HALT: begin
                 cuif.halt = 1'b1;
             end
+            J: begin
+                cuif.addr = cuif.imemload[25:0];
+                cuif.PCsrc = 3'd3;
+            end
+            JAL: begin
+                cuif.addr = cuif.imemload[25:0];
+                cuif.RegWrite = 1;
+                cuif.RegDst = 2'b10;
+            cuif.PCsrc = 3'd3;
+            end
         endcase
-    end
-    else if (cuif.opcode == J) begin
-        cuif.addr = cuif.imemload[25:0];
-        cuif.PCsrc = 3'd3;
-    end
-    else if (cuif.opcode == JAL) begin
-        cuif.addr = cuif.imemload[25:0];
-        cuif.RegWrite = 1;
-        cuif.RegDst = 2'b10;
-        cuif.PCsrc = 3'd3;
     end
 end
 

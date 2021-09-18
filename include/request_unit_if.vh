@@ -11,14 +11,14 @@ interface request_unit_if;
 
 // request unit signals
   // hit and enable
-  logic               ihit, imemREN;
+  logic               ihit, imemREN, halt;
 
   logic               dhit, dmemREN, dmemWEN;
   
   logic               dWEN, dREN, pcEN;
   // datapath ports
   modport  ru (
-    input   ihit, dhit, dWEN, dREN,
+    input   ihit, dhit, dWEN, dREN, halt,
     output  imemREN, dmemREN, dmemWEN, pcEN
   );
 
