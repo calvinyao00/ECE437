@@ -17,13 +17,13 @@ begin
         ruif.dmemREN <= 0;
         ruif.dmemWEN <= 0;
     end
-    else if(ruif.ihit == 1) begin
-        ruif.dmemREN <= ruif.dREN;
-        ruif.dmemWEN <= ruif.dWEN;
-    end
     else if(ruif.dhit == 1) begin
         ruif.dmemREN <= 0;
         ruif.dmemWEN <= 0;
+    end
+    else if(ruif.ihit == 1) begin
+        ruif.dmemREN <= ruif.dREN;
+        ruif.dmemWEN <= ruif.dWEN;
     end
 end
 
@@ -53,7 +53,7 @@ always_comb begin
 end
 */
 
-assign ruif.pcEN = ruif.ihit & (~ruif.halt);
+assign ruif.pcEN = ruif.ihit;
 assign ruif.imemREN = 1;
 
 endmodule

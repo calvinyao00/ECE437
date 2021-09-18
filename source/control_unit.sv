@@ -102,7 +102,7 @@ always_comb begin
         cuif.imm = {16'h0000, cuif.imemload[15:0]};
         cuif.SignedExt = cuif.imemload[15] ? {16'hffff, cuif.imemload[15:0]} : {16'h0000, cuif.imemload[15:0]};
         cuif.ZeroExt = {16'h0000, cuif.imemload[15:0]};
-        cuif.BranchAddr = {14'h0000, cuif.imemload[15:0], 2'b00};
+        cuif.BranchAddr = {cuif.SignedExt[29:0], 2'b00};
         casez(cuif.opcode)
             BEQ: begin
                 cuif.PCsrc = 3'd5; 

@@ -72,12 +72,13 @@ module datapath (
       else rfif.WEN = 0;
     end
     else begin
-      rfif.WEN = cuif.RegWrite;
+      rfif.WEN = cuif.RegWrite & (dpif.ihit | dpif.dhit);
     end
   end
   assign rfif.wsel = (cuif.RegDst == '0) ? cuif.rd : (cuif.RegDst == 2'b1 ? cuif.rt : 5'd31);
   assign rfif.rsel1 = cuif.rs;
   assign rfif.rsel2 = cuif.rt;
+  assign rfif.ihit = dpif.ihit;
   always_comb begin
     if(cuif.lui) rfif.wdat = {cuif.imm[15:0], 16'b0};
     else if(cuif.MemtoReg) rfif.wdat = dpif.dmemload;

@@ -10,7 +10,7 @@ interface control_unit_if;
 
 // request unit signals
   // hit and enable
-  word_t              imemload, imm, addr, SignedExt, ZeroExt, BranchAddr;
+  word_t              imm, imemload, addr, SignedExt, ZeroExt, BranchAddr;
 
   logic               halt, WEN, dWEN, dREN, RegWrite, MemtoReg, lui;
 

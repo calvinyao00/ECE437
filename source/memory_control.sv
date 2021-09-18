@@ -53,7 +53,7 @@ import cpu_types_pkg::*;
       ccif.iload = ccif.ramload;
     end
 
-    ccif.iwait = (ccif.ramstate == ACCESS) ? !((!ccif.dREN) & (!ccif.dWEN) & ccif.iREN) : 1;
+    ccif.iwait = (ccif.ramstate == ACCESS) ? !(!ccif.dREN && !ccif.dWEN && ccif.iREN) : 1;
   end
 
 endmodule
