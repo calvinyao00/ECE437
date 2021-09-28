@@ -27,11 +27,11 @@ always_comb begin
     cuif.ALUsrc = '0;
     cuif.PCsrc = '0;
     cuif.RegWrite = 0;
-    cuif.MemtoReg = 0;
-    cuif.lui = 0;
     cuif.SignedExt = '0;
     cuif.ZeroExt = '0;
     cuif.BranchAddr = '0;
+    cuif.RegSrc = '0;
+    cuif.jal = 1'b0;
 
     if(cuif.opcode == RTYPE) begin
         cuif.rs = cuif.imemload[25:21];
@@ -96,7 +96,7 @@ always_comb begin
     end
     else begin
         // i type
-        cuif.RegDst = 2'b1; // decide wsel
+        cuif.RegDst = 1'b1; // decide wsel
         cuif.rs = cuif.imemload[25:21];
         cuif.rt = cuif.imemload[20:16];
         cuif.imm = {16'h0000, cuif.imemload[15:0]};
@@ -149,10 +149,10 @@ always_comb begin
             end
             LUI: begin
                 cuif.RegWrite = 1;
-                cuif.lui = 1;
+                cuif.RegSrc = 2'b01;
             end
             LW: begin
-                cuif.MemtoReg = 1;
+                cuif.RegSrc = 2'b10;
                 cuif.RegWrite = 1;
                 cuif.dREN = 1;
                 cuif.aluop = ALU_ADD;
@@ -173,8 +173,9 @@ always_comb begin
             JAL: begin
                 cuif.addr = cuif.imemload[25:0];
                 cuif.RegWrite = 1;
-                cuif.RegDst = 2'b10;
-            cuif.PCsrc = 3'd3;
+                cuif.RegSrc = 2'b11;
+                cuif.PCsrc = 3'd3;
+                cuif.jal = 1'b1;
             end
         endcase
     end

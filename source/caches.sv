@@ -18,7 +18,8 @@ module caches (
   datapath_cache_if.cache dcif,
   caches_if cif
 );
-
+  // import types
+  import cpu_types_pkg::*;
   word_t instr;
   word_t daddr;
 

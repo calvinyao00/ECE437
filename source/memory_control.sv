@@ -22,7 +22,7 @@ import cpu_types_pkg::*;
   import cpu_types_pkg::*;
 
   // number of cpus for cc
-  parameter CPUS = 1;
+  parameter CPUS = 2;
 
   always_comb begin
     ccif.dwait = 0;
@@ -47,10 +47,10 @@ import cpu_types_pkg::*;
       ccif.dwait = (ccif.ramstate == BUSY || ccif.ramstate == ERROR);
       ccif.ramstore = ccif.dstore;
     end
-    else begin//if (ccif.iREN) begin
+    else if (ccif.iREN) begin
       ccif.ramREN = ccif.iREN;
       ccif.ramaddr = ccif.iaddr;
-      ccif.iload = ccif.ramload;
+      ccif.iload = (ccif.ramstate == ACCESS) ? ccif.ramload : 0;
     end
 
     ccif.iwait = (ccif.ramstate == ACCESS) ? !(!ccif.dREN && !ccif.dWEN && ccif.iREN) : 1;

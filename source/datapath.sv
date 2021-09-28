@@ -9,10 +9,14 @@
 // data path interface
 `include "datapath_cache_if.vh"
 `include "alu_if.vh"
+`include "if_id_if.vh"
+`include "id_ex_if.vh"
+`include "ex_mem_if.vh"
+`include "mem_wb_if.vh"
 `include "control_unit_if.vh"
 `include "program_counter_if.vh"
 `include "register_file_if.vh"
-`include "request_unit_if.vh"
+`include "hazard_unit_if.vh"
 
 // alu op, mips op, and instruction type
 `include "cpu_types_pkg.vh"
@@ -31,98 +35,194 @@ module datapath (
   control_unit_if cuif();
   program_counter_if pcif();
   register_file_if rfif();
-  request_unit_if ruif();
+  if_id_if ifid();
+  id_ex_if idex();
+  ex_mem_if exmemif();
+  mem_wb_if memwbif();
+  hazard_unit_if huif();
 
   alu ALU(nRST, aif);
   control_unit CONTROL(cuif);
-  request_unit REQUEST(CLK, nRST, ruif);
   register_file REGISTER(CLK, nRST, rfif);
   program_counter PC(CLK, nRST, pcif);
+  if_id II(CLK, nRST, ifid);
+  id_ex IE(CLK, nRST, idex);
+  ex_mem EXMEM(CLK, nRST, exmemif);
+  mem_wb MEMWB(CLK, nRST, memwbif);
+  hazard_unit HAZARD(huif);
 
   word_t JumpAddr;
   logic nxt_halt;
+  word_t  newPc;
 
-  assign JumpAddr = {pcif.npc[31:28], dpif.imemload[25:0], 2'b00};
-  
+  //assign npc = PC + 4;
 
-  // Control Unit DUT
-  assign cuif.imemload = dpif.imemload;
-  // ALU DUT
-  //assign aif.portA = rfif.rdat1;
-  assign aif.portA = rfif.rdat1;
-  always_comb begin
-    casez(cuif.ALUsrc)
-      2'd3: aif.portB = cuif.ZeroExt;
-      2'd2: aif.portB = cuif.SignedExt;
-      2'd1: aif.portB = rfif.rdat2;
-      2'd0: aif.portB = rfif.rdat2;
-    endcase
-  end
-  assign aif.op = cuif.aluop;
-  // Request Unit DUT
-  assign ruif.ihit = dpif.ihit;
-  assign ruif.dhit = dpif.dhit;
-  assign ruif.dREN = cuif.dREN;
-  assign ruif.dWEN = cuif.dWEN;
-  assign ruif.halt = cuif.halt;
-  // Register File DUT
-  always_comb begin 
-    if(cuif.MemtoReg) begin
-      if(dpif.dhit | dpif.ihit) rfif.WEN = cuif.RegWrite;
-      else rfif.WEN = 0;
-    end
-    else begin
-      rfif.WEN = cuif.RegWrite & (dpif.ihit | dpif.dhit);
-    end
-  end
-  assign rfif.wsel = (cuif.RegDst == '0) ? cuif.rd : (cuif.RegDst == 2'b1 ? cuif.rt : 5'd31);
+  assign JumpAddr = {idex.out.npc[31:28], idex.out.instr[25:0], 2'b00};
+
+  // IF/ID latch
+  assign ifid.PC = pcif.PC; //// PC
+  assign ifid.npc = pcif.npc;
+  assign ifid.imemload = dpif.imemload;
+  assign ifid.ihit = dpif.ihit;
+  assign ifid.flushed = huif.flushed;
+  assign ifid.stall = 0;
+  // ID/EX latch
+  assign idex.ihit = dpif.ihit;
+  assign idex.in.SignedExt = cuif.SignedExt;
+  assign idex.in.ZeroExt = cuif.ZeroExt;
+  assign idex.in.BrAddr = cuif.BranchAddr;
+  assign idex.in.pcsrc = cuif.PCsrc;
+  assign idex.in.pc = ifid.pcout;
+  assign idex.in.alusrc = cuif.ALUsrc;
+  assign idex.in.RegSrc = cuif.RegSrc;
+  assign idex.in.npc = ifid.pc;
+  assign idex.in.RegDst = cuif.RegDst;
+  assign idex.in.rdat1 = rfif.rdat1;
+  assign idex.in.rdat2 = rfif.rdat2;
+  assign idex.in.rd = cuif.rd;
+  assign idex.in.rs = cuif.rs;
+  assign idex.in.rt = cuif.rt;
+  assign idex.in.jal = cuif.jal;
+  assign idex.in.aluop = cuif.aluop;
+  assign idex.in.func = cuif.func;
+  assign idex.in.addr = cuif.addr;
+  assign idex.in.halt = cuif.halt;
+  assign idex.in.imm = cuif.imm;
+  assign idex.in.instr = ifid.instr;
+  assign idex.in.opcode = cuif.opcode;
+  assign idex.in.dREN = cuif.dREN;
+  assign idex.in.dWEN = cuif.dWEN;
+  assign idex.in.RegWrite = cuif.RegWrite;
+  assign idex.flushed = 0;
+  assign idex.stall = 0;
+  assign idex.in.shamt = cuif.shamt;
+  // EX/MEM latch
+  assign exmemif.dhit = dpif.dhit;
+  assign exmemif.ihit = dpif.ihit;
+  assign exmemif.ex_mem_in.newPc = newPc;
+  assign exmemif.ex_mem_in.pc = idex.out.pc;
+  assign exmemif.ex_mem_in.aluOut = aif.portOut;
+  assign exmemif.ex_mem_in.dmemaddr = aif.portOut;
+  //assign exmemif.ex_mem_in.imemaddr = aif.portOut;
+  //assign exmemif.ex_mem_in.dmemstore = rfif.rdat2;
+  assign exmemif.ex_mem_in.dmemstore = idex.out.rdat2;
+  assign exmemif.ex_mem_in.BrAddr = idex.out.BrAddr;
+  assign exmemif.ex_mem_in.func = idex.out.func;
+  assign exmemif.ex_mem_in.dWEN = idex.out.dWEN;
+  assign exmemif.ex_mem_in.dREN = idex.out.dREN;
+  assign exmemif.ex_mem_in.halt = idex.out.halt;
+  assign exmemif.ex_mem_in.jal = idex.out.jal;
+  assign exmemif.ex_mem_in.opcode = idex.out.opcode;
+  assign exmemif.ex_mem_in.pcPlusFour = idex.out.npc;
+  assign exmemif.ex_mem_in.RegWrite = idex.out.RegWrite;
+  assign exmemif.ex_mem_in.RegSrc = idex.out.RegSrc;
+  assign exmemif.ex_mem_in.imemload = idex.out.instr;
+  assign exmemif.ex_mem_in.RegDst = idex.out.RegDst;
+  assign exmemif.ex_mem_in.rd = idex.out.rd;
+  assign exmemif.ex_mem_in.rt = idex.out.rt;
+  assign exmemif.ex_mem_in.rs = idex.out.rs;
+  assign exmemif.ex_mem_in.imm16 = idex.out.imm;
+  assign exmemif.ex_mem_in.shamt = idex.out.shamt;
+  assign exmemif.flushed = 0;
+  // MEM/WB latch
+  assign memwbif.mem_wb_in.RegDst = exmemif.ex_mem_out.RegDst;
+  assign memwbif.mem_wb_in.RegWrite = exmemif.ex_mem_out.RegWrite;
+  assign memwbif.mem_wb_in.RegSrc = exmemif.ex_mem_out.RegSrc;
+  assign memwbif.mem_wb_in.halt = exmemif.ex_mem_out.halt;
+  assign memwbif.mem_wb_in.jal = exmemif.ex_mem_out.jal;
+  assign memwbif.mem_wb_in.func = exmemif.ex_mem_out.func;
+  assign memwbif.mem_wb_in.opcode = exmemif.ex_mem_out.opcode;
+  assign memwbif.mem_wb_in.pc = exmemif.ex_mem_out.pc;
+  assign memwbif.mem_wb_in.newPc = exmemif.ex_mem_out.newPc;
+  assign memwbif.mem_wb_in.BrAddr = exmemif.ex_mem_out.BrAddr;
+  assign memwbif.mem_wb_in.dmemstore = exmemif.ex_mem_out.dmemstore;
+  assign memwbif.mem_wb_in.pcPlusFour = exmemif.ex_mem_out.pcPlusFour;
+  assign memwbif.mem_wb_in.aluOut = exmemif.ex_mem_out.aluOut;
+  assign memwbif.mem_wb_in.dmemload = dpif.dmemload;
+  assign memwbif.mem_wb_in.imemload = exmemif.ex_mem_out.imemload;
+  assign memwbif.mem_wb_in.rd = exmemif.ex_mem_out.rd;
+  assign memwbif.mem_wb_in.rt = exmemif.ex_mem_out.rt;
+  assign memwbif.mem_wb_in.rs = exmemif.ex_mem_out.rs;
+  assign memwbif.mem_wb_in.imm16 = exmemif.ex_mem_out.imm16;
+  assign memwbif.EN = dpif.dhit | dpif.ihit;
+  assign memwbif.flushed = 0;
+  assign memwbif.mem_wb_in.shamt = exmemif.ex_mem_out.shamt;
+  // HAZARD UNIT
+  assign huif.PCsrc = idex.out.pcsrc;
+  assign huif.zero = aif.flagZero;
+//Datapath glue logic
+  //instruction fetch
+  assign dpif.imemREN = 1;
+  //assign dpif.imemaddr = exmemif.ex_mem_out.newPc; 
+  //////////////////assign dpif.imemaddr = pcif.newpc; 
+  assign dpif.imemaddr = pcif.PC; 
+
+  // Control Unit & instruction decode stage
+  assign cuif.imemload = ifid.instr;
   assign rfif.rsel1 = cuif.rs;
   assign rfif.rsel2 = cuif.rt;
-  assign rfif.ihit = dpif.ihit;
+  // ALU Excution
+  //assign aif.portA = rfif.rdat1;
+  assign aif.portA = idex.out.rdat1;
   always_comb begin
-    if(cuif.lui) rfif.wdat = {cuif.imm[15:0], 16'b0};
-    else if(cuif.MemtoReg) rfif.wdat = dpif.dmemload;
-    else if(cuif.RegDst == 2'b10) rfif.wdat = pcif.npc;
-    else rfif.wdat = aif.portOut;
-  end
-  // PC DUT
-  always_comb begin
-    pcif.newpc = pcif.npc;
-    casez(cuif.PCsrc) 
-      3'd2: begin
-        pcif.newpc = rfif.rdat1;
-      end
-      3'd3: begin
-        pcif.newpc = JumpAddr;
-      end
-      3'd4: begin
-        if(~aif.flagZero) pcif.newpc = pcif.npc + cuif.BranchAddr;
-        else pcif.newpc = pcif.npc;
-      end
-      3'd5: begin
-        if(aif.flagZero) pcif.newpc = pcif.npc + cuif.BranchAddr;
-        else pcif.newpc = pcif.npc;
-      end
-      3'd0: pcif.newpc = pcif.npc;
+    casez(idex.out.alusrc)
+      2'd3: aif.portB = idex.out.ZeroExt;
+      2'd2: aif.portB = idex.out.SignedExt;
+      2'd1: aif.portB = idex.out.rdat2;
+      2'd0: aif.portB = idex.out.rdat2;
     endcase
   end
-  assign pcif.pcEN = ruif.pcEN;
-  // Datapath DUT
-  always_ff @ (posedge CLK, negedge nRST) begin
-    if(!nRST) begin
-      dpif.halt <= 0;
-    end
-    else begin
-      dpif.halt <= cuif.halt;
-    end
+  assign aif.op = idex.out.aluop;
+  //Memory Read/Write stage
+  assign dpif.dmemREN = exmemif.ex_mem_out.dREN;
+  assign dpif.dmemWEN = exmemif.ex_mem_out.dWEN;
+  assign dpif.dmemstore = exmemif.ex_mem_out.dmemstore;
+  assign dpif.dmemaddr = exmemif.ex_mem_out.dmemaddr;
+  //Register Write Back
+
+  // Register File DUT
+  always_comb begin 
+    rfif.WEN = memwbif.mem_wb_out.RegWrite;
+    rfif.wsel =  memwbif.mem_wb_out.jal ? regbits_t'(5'd31) : (memwbif.mem_wb_out.RegDst ? memwbif.mem_wb_out.rt: memwbif.mem_wb_out.rd);
+    casez(memwbif.mem_wb_out.RegSrc) 
+      2'b00:rfif.wdat = memwbif.mem_wb_out.aluOut;
+      2'b01:rfif.wdat = {memwbif.mem_wb_out.imm16, 16'b0};
+      2'b10:rfif.wdat = memwbif.mem_wb_out.dmemload;
+      2'b11:rfif.wdat = memwbif.mem_wb_out.pcPlusFour;
+    endcase
   end
+/*   always_comb begin
+    if(cuif.RegSrc == 2'b1) rfif.wdat = {cuif.imm[15:0], 16'b0};
+    else if(cuif.RegSrc == 2'b10) rfif.wdat = dpif.dmemload; // memtoreg
+    else if(cuif.RegSrc == 2'b11) rfif.wdat = pcif.npc;
+    else rfif.wdat = aif.portOut;
+  end
+  assign rfif.wsel = (cuif.RegDst == 0) ? cuif.rd : cuif.rt; */
+ 
 
-  assign dpif.imemREN = ruif.imemREN;
-  assign dpif.imemaddr = pcif.PC;
-  assign dpif.dmemREN = ruif.dmemREN;
-  assign dpif.dmemWEN = ruif.dmemWEN;
-  assign dpif.dmemstore = rfif.rdat2;
-  assign dpif.dmemaddr = aif.portOut;
-
-  
+  // PC DUT
+  assign pcif.newpc = exmemif.ex_mem_out.newPc;
+  assign pcif.pcEN = dpif.ihit;
+  //Resolving branches ang jumps in EX stage, might need to move to MEM stage
+  always_comb begin
+    newPc = idex.out.npc; // pc+4
+    casez(idex.out.pcsrc) 
+      3'd0: newPc = pcif.npc;
+      3'd2: begin
+        newPc = idex.out.rdat1;
+      end
+      3'd3: begin
+        newPc = JumpAddr;
+      end
+      3'd4: begin
+        if(~aif.flagZero) newPc = idex.out.npc + idex.out.BrAddr;
+        else newPc = idex.out.npc;
+      end
+      3'd5: begin
+        if(aif.flagZero) newPc = idex.out.npc + idex.out.BrAddr;
+        else newPc = idex.out.npc;
+      end
+    endcase
+  end 
+  assign dpif.halt = memwbif.mem_wb_out.halt;
 endmodule

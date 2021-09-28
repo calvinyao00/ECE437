@@ -8,6 +8,7 @@ import cpu_types_pkg::*;
     program_counter_if.pc pcif
 );
 
+
 always_ff @ (posedge clk, negedge nRST)
 begin
     if(!nRST) begin

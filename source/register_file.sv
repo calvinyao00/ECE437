@@ -9,7 +9,7 @@ module register_file (
 logic [31:0] [31:0] regis;
 logic [31:0] [31:0] nxt_reg;
 
-always_ff @ (posedge CLK, negedge nRST) begin
+always_ff @ (negedge CLK, negedge nRST) begin
   if(!nRST) begin
     regis <= '0;
   end

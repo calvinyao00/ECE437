@@ -30,12 +30,7 @@ import cpu_types_pkg::*;
 
 module cpu_tracker(
   input logic CLK,
-<<<<<<< HEAD
-  input logic wb_stall,
-  input logic dhit,
-=======
   input logic wb_enable,
->>>>>>> 06d6d2ca6704ebf35a725d6ad479e4aa9723e632
   input funct_t funct,
   input opcode_t opcode,
   input regbits_t rs,
@@ -43,16 +38,6 @@ module cpu_tracker(
   input regbits_t wsel,
   input word_t instr,
   input word_t pc,
-<<<<<<< HEAD
-  input word_t npc,
-  input word_t branch_addr,
-  input word_t imm,
-  input logic [4:0] shamt,
-  input logic [15:0] lui,
-  input word_t store_dat,
-  input word_t reg_dat,
-  input word_t load_dat,
-=======
   input word_t next_pc_val,
   input word_t branch_addr,
   input word_t imm,
@@ -60,7 +45,6 @@ module cpu_tracker(
   input logic [15:0] lui_pre_shift,
   input word_t store_dat,
   input word_t reg_dat,
->>>>>>> 06d6d2ca6704ebf35a725d6ad479e4aa9723e632
   input word_t dat_addr
 );
 
@@ -68,11 +52,7 @@ module cpu_tracker(
 
   integer fptr, halt_written;
   string instr_mnemonic, output_str, operands, temp_str, halt_temp_str;
-<<<<<<< HEAD
-  string rs_str, rt_str, ram_str, lw_str, halt_output_str, dest_str;
-=======
   string rs_str, rt_str, halt_output_str, dest_str;
->>>>>>> 06d6d2ca6704ebf35a725d6ad479e4aa9723e632
   opcode_t last_opcode;
 
   initial begin: INIT_FILE
@@ -93,11 +73,7 @@ module cpu_tracker(
           ADDU, ADD, SUB,
           AND, NOR, OR,
           SLT, SLTU, SUBU,
-<<<<<<< HEAD
-          SLLV, SRLV,
-=======
-	  SLLV, SRLV,
->>>>>>> 06d6d2ca6704ebf35a725d6ad479e4aa9723e632
+	        SLLV, SRLV,
           XOR:  $sformat(operands, "%s, %s, %s", dest_str, rs_str, rt_str);
           JR:   $sformat(operands, "%s", rs_str);
         endcase
@@ -108,21 +84,12 @@ module cpu_tracker(
       XORI:     $sformat(operands, "%s, %s, %d", dest_str, rs_str, signed'(imm));
       HALT:     $sformat(operands, "");
       // BEQ is a patch until ISS is corrected
-<<<<<<< HEAD
-      BEQ:      $sformat(operands, "%s, %s, %d", rs_str, rt_str, branch_addr);
-      BNE:      $sformat(operands, "%s, %s, %d", rs_str, rt_str, branch_addr);
-      LUI:      $sformat(operands,"%s, %d", dest_str, lui);
-      LW, LL,
-      SW, SC:   $sformat(operands, "%s, %d(%s)", rt_str, signed'(imm), rs_str);
-      J, JAL:   $sformat(operands, "%x", signed'(npc));
-=======
       BEQ:      $sformat(operands, "%s, %s, %d", rt_str, rs_str, branch_addr);
       BNE:      $sformat(operands, "%s, %s, %d", rs_str, rt_str, branch_addr);
       LUI:      $sformat(operands,"%s, %d", dest_str, lui_pre_shift);
       LW, LL,
       SW, SC:   $sformat(operands, "%s, %d(%s)", dest_str, signed'(imm), rs_str);
       J, JAL:   $sformat(operands, "%x", signed'(next_pc_val));
->>>>>>> 06d6d2ca6704ebf35a725d6ad479e4aa9723e632
     endcase
   end
 
@@ -207,39 +174,11 @@ module cpu_tracker(
     endcase
   endfunction
 
-<<<<<<< HEAD
-  // LW are a half cycle too late due to state machine inside
-  // request unit. This is a work a round for that problem.
-  always_ff @ (posedge CLK) begin
-    if (dhit) begin
-        if (last_opcode == LW) begin
-          $sformat(ram_str, "    [word read");
-          $sformat(ram_str, "%s from %x]\n", ram_str, {16'h0, dat_addr[15:0]});
-          $sformat(ram_str, "%s    %s", ram_str, dest_str);
-          $sformat(ram_str, "%s <-- %x\n", ram_str, load_dat);
-          $sformat(lw_str, "%s%s\n", temp_str, ram_str);
-          $fwrite(fptr, lw_str);
-        end
-    end
-  end
-
-  always_ff @ (posedge CLK) begin
-    if (!wb_stall)
-      last_opcode <= opcode;
-  end
-
-  always_ff @ (posedge CLK) begin
-    if (!wb_stall && instr != 0) begin
-      $sformat(temp_str, "%X (Core %d): %X", pc, CPUID + 1, instr);
-      $sformat(temp_str, "%s %s %s\n", temp_str, instr_mnemonic, operands);
-      $sformat(temp_str, "%s    PC <-- %X\n", temp_str, npc);
-=======
   always_ff @ (posedge CLK) begin
     if (wb_enable && instr != 0) begin
       $sformat(temp_str, "%X (Core %d): %X", pc, CPUID + 1, instr);
       $sformat(temp_str, "%s %s %s\n", temp_str, instr_mnemonic, operands);
       $sformat(temp_str, "%s    PC <-- %X\n", temp_str, next_pc_val);
->>>>>>> 06d6d2ca6704ebf35a725d6ad479e4aa9723e632
       case(opcode)
         RTYPE: case(funct)
           ADDU, ADD, AND,
@@ -257,13 +196,6 @@ module cpu_tracker(
               $sformat(temp_str, "%s <-- %x\n", temp_str, store_dat);
         end
         //TODO: atomic instructions
-<<<<<<< HEAD
-      endcase
-      $sformat(output_str, "%s\n", temp_str);
-      // LW are handled differently
-      if (opcode != LW)
-        $fwrite(fptr, output_str);
-=======
         LW: begin
               $sformat(temp_str, "%s    [word read", temp_str);
               $sformat(temp_str, "%s from %x]\n", temp_str, {16'h0, dat_addr[15:0]});
@@ -273,7 +205,6 @@ module cpu_tracker(
       endcase
       $sformat(output_str, "%s\n", temp_str);
       $fwrite(fptr, output_str);
->>>>>>> 06d6d2ca6704ebf35a725d6ad479e4aa9723e632
     end
   end
 
