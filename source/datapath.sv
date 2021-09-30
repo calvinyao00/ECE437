@@ -167,9 +167,11 @@ module datapath (
   assign huif.idex_rd = idex.out.rd;
   assign huif.exmem_rt = exmemif.ex_mem_out.rt;
   assign huif.idex_rt = idex.out.rt;
-  assign huif.opcode = cuif.opcode;
+  assign huif.idex_opcode = idex.out.opcode;
+  assign huif.exmem_opcode = exmemif.ex_mem_out.opcode;
   assign huif.func = cuif.func;
-  assign huif.RegWrite = exmemif.ex_mem_out.RegWrite;
+  assign huif.exmem_RegWrite = exmemif.ex_mem_out.RegWrite;
+  assign huif.idex_RegWrite = idex.out.RegWrite;
 //Datapath glue logic
   //instruction fetch
   assign dpif.imemREN = 1;
@@ -222,7 +224,7 @@ module datapath (
 
   // PC DUT
   assign pcif.newpc = exmemif.ex_mem_out.pcsrc  == 0 ? pcif.npc : exmemif.ex_mem_out.newPc;
-  assign pcif.pcEN = dpif.ihit;
+  assign pcif.pcEN = dpif.ihit & !huif.ifid_stall;
   //Resolving branches ang jumps in EX stage, might need to move to MEM stage
   always_comb begin
     newPc = idex.out.npc; // pc+4

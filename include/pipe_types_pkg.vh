@@ -70,6 +70,13 @@ package pipe_types_pkg;
     R_IDEX_NO_DATA = 3'b010
     } hazard_t;
 
+    typedef enum logic [1:0] {
+    IDLE = 2'b00,
+    IDEX_STALL = 2'b01,
+    EXMEM_STALL = 2'b10,
+    END_STALL = 2'b11
+    } stall_state;
+
     typedef struct packed {
     word_t           pcPlusFour;
     opcode_t opcode;
