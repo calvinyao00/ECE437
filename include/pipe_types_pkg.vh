@@ -61,7 +61,7 @@ package pipe_types_pkg;
     logic dWEN;
     logic RegWrite;
     logic [4:0] shamt;
-    logic flagZero;
+    // /logic flagZero;
      } ie_t;
 
     typedef enum logic [2:0] {

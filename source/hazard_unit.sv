@@ -24,7 +24,7 @@ always_comb begin
             if(huif.rs == huif.idex_rt || huif.rt == huif.idex_rt) huif.hazard = R_IDEX_NO_DATA;
         end
     end
-    else if(huif.exmem_RegWrite) begin
+    if(huif.exmem_RegWrite) begin
         if(huif.exmem_rd != 0 && huif.exmem_opcode == RTYPE) begin
             if(huif.rs == huif.exmem_rd || huif.rt == huif.exmem_rd) huif.hazard = R_EXMEM_NO_DATA;
         end

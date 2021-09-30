@@ -169,7 +169,7 @@ module datapath (
   assign huif.idex_rt = idex.out.rt;
   assign huif.idex_opcode = idex.out.opcode;
   assign huif.exmem_opcode = exmemif.ex_mem_out.opcode;
-  assign huif.func = cuif.func;
+  //assign huif.func = cuif.func;
   assign huif.exmem_RegWrite = exmemif.ex_mem_out.RegWrite;
   assign huif.idex_RegWrite = idex.out.RegWrite;
 //Datapath glue logic

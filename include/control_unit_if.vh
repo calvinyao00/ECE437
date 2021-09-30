@@ -30,12 +30,12 @@ interface control_unit_if;
   // control unit ports
   modport  cu (
     input   imemload,
-    output  RegSrc, flagZero, jal, opcode, func, shamt, addr, SignedExt, ZeroExt, BranchAddr, halt, RegDst, WEN, dWEN, dREN, RegWrite, aluop, rs, rt, rd, ALUsrc, PCsrc, imm
+    output  RegSrc, jal, opcode, func, shamt, addr, SignedExt, ZeroExt, BranchAddr, halt, RegDst, dWEN, dREN, RegWrite, aluop, rs, rt, rd, ALUsrc, PCsrc, imm//flagZero, WEN,
   );
 
   modport  tb (
     output   imemload,
-    input  RegSrc, flagZero, jal, opcode, func, shamt, addr, SignedExt, ZeroExt, BranchAddr, halt, RegDst, WEN, dWEN, dREN, RegWrite, aluop, rs, rt, rd, ALUsrc, PCsrc, imm
+    input  RegSrc, jal, opcode, func, shamt, addr, SignedExt, ZeroExt, BranchAddr, halt, RegDst, dWEN, dREN, RegWrite, aluop, rs, rt, rd, ALUsrc, PCsrc, imm//flagZero, WEN,
   );
 
 endinterface

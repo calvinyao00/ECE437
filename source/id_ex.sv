@@ -32,7 +32,7 @@ always_ff @ (posedge CLK, negedge nRST) begin
         idex.out.aluop <= ALU_SLL;
         idex.out.instr <= '0;
         idex.out.RegSrc <= '0;
-        idex.out.flagZero <= '0;
+        //idex.out.flagZero <= '0;
         idex.out.dREN <= 0;
         idex.out.dWEN <= 0;
         idex.out.RegWrite <= 0;
@@ -55,7 +55,7 @@ always_ff @ (posedge CLK, negedge nRST) begin
         idex.out.opcode <= opcode_t'('0);
         idex.out.func <= funct_t'('0);
         idex.out.addr <= '0;
-        idex.out.flagZero <= '0;
+        //idex.out.flagZero <= '0;
         idex.out.halt <= 0;
         idex.out.imm <= '0;
         idex.out.aluop <= ALU_SLL;
