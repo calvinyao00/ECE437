@@ -54,6 +54,12 @@ module datapath (
   word_t JumpAddr;
   logic nxt_halt;
   word_t  newPc;
+  i_t cuit;
+  r_t curt;
+  j_t cujt;
+  assign cuit = i_t'(ifid.instr);
+  assign cujt = j_t'(ifid.instr);
+  assign curt = r_t'(ifid.instr);
 
   //assign npc = PC + 4;
 
@@ -65,7 +71,7 @@ module datapath (
   assign ifid.imemload = dpif.imemload;
   assign ifid.ihit = dpif.ihit;
   assign ifid.flushed = huif.flushed;
-  assign ifid.stall = 0;
+  assign ifid.stall = huif.ifid_stall;
   // ID/EX latch
   assign idex.ihit = dpif.ihit;
   assign idex.in.SignedExt = cuif.SignedExt;
@@ -87,14 +93,15 @@ module datapath (
   assign idex.in.func = cuif.func;
   assign idex.in.addr = cuif.addr;
   assign idex.in.halt = cuif.halt;
+  //assign idex.in.flagZero = cuif.flagZero;
   assign idex.in.imm = cuif.imm;
   assign idex.in.instr = ifid.instr;
   assign idex.in.opcode = cuif.opcode;
   assign idex.in.dREN = cuif.dREN;
   assign idex.in.dWEN = cuif.dWEN;
   assign idex.in.RegWrite = cuif.RegWrite;
-  assign idex.flushed = 0;
-  assign idex.stall = 0;
+  assign idex.flushed = huif.flushed;  /////////
+  assign idex.stall = huif.idex_stall;
   assign idex.in.shamt = cuif.shamt;
   // EX/MEM latch
   assign exmemif.dhit = dpif.dhit;
@@ -111,7 +118,9 @@ module datapath (
   assign exmemif.ex_mem_in.dWEN = idex.out.dWEN;
   assign exmemif.ex_mem_in.dREN = idex.out.dREN;
   assign exmemif.ex_mem_in.halt = idex.out.halt;
+  assign exmemif.ex_mem_in.pcsrc = idex.out.pcsrc;
   assign exmemif.ex_mem_in.jal = idex.out.jal;
+  assign exmemif.ex_mem_in.flagZero = aif.flagZero;
   assign exmemif.ex_mem_in.opcode = idex.out.opcode;
   assign exmemif.ex_mem_in.pcPlusFour = idex.out.npc;
   assign exmemif.ex_mem_in.RegWrite = idex.out.RegWrite;
@@ -123,7 +132,8 @@ module datapath (
   assign exmemif.ex_mem_in.rs = idex.out.rs;
   assign exmemif.ex_mem_in.imm16 = idex.out.imm;
   assign exmemif.ex_mem_in.shamt = idex.out.shamt;
-  assign exmemif.flushed = 0;
+  assign exmemif.stall = huif.exmem_stall;
+  assign exmemif.flushed = huif.flushed;
   // MEM/WB latch
   assign memwbif.mem_wb_in.RegDst = exmemif.ex_mem_out.RegDst;
   assign memwbif.mem_wb_in.RegWrite = exmemif.ex_mem_out.RegWrite;
@@ -146,10 +156,20 @@ module datapath (
   assign memwbif.mem_wb_in.imm16 = exmemif.ex_mem_out.imm16;
   assign memwbif.EN = dpif.dhit | dpif.ihit;
   assign memwbif.flushed = 0;
+  assign memwbif.stall = huif.memwb_stall;
   assign memwbif.mem_wb_in.shamt = exmemif.ex_mem_out.shamt;
   // HAZARD UNIT
-  assign huif.PCsrc = idex.out.pcsrc;
-  assign huif.zero = aif.flagZero;
+  assign huif.PCsrc = exmemif.ex_mem_out.pcsrc;
+  assign huif.zero = exmemif.ex_mem_out.flagZero;
+  assign huif.rs = cuif.rs;
+  assign huif.rt = cuif.rt;
+  assign huif.exmem_rd = exmemif.ex_mem_out.rd;
+  assign huif.idex_rd = idex.out.rd;
+  assign huif.exmem_rt = exmemif.ex_mem_out.rt;
+  assign huif.idex_rt = idex.out.rt;
+  assign huif.opcode = cuif.opcode;
+  assign huif.func = cuif.func;
+  assign huif.RegWrite = exmemif.ex_mem_out.RegWrite;
 //Datapath glue logic
   //instruction fetch
   assign dpif.imemREN = 1;
@@ -173,7 +193,7 @@ module datapath (
     endcase
   end
   assign aif.op = idex.out.aluop;
-  //Memory Read/Write stage
+  //Memory Read/Write stagsim:/system_tb/DUT/CPU/DP/dpif/imemload
   assign dpif.dmemREN = exmemif.ex_mem_out.dREN;
   assign dpif.dmemWEN = exmemif.ex_mem_out.dWEN;
   assign dpif.dmemstore = exmemif.ex_mem_out.dmemstore;
@@ -201,13 +221,13 @@ module datapath (
  
 
   // PC DUT
-  assign pcif.newpc = exmemif.ex_mem_out.newPc;
+  assign pcif.newpc = exmemif.ex_mem_out.pcsrc  == 0 ? pcif.npc : exmemif.ex_mem_out.newPc;
   assign pcif.pcEN = dpif.ihit;
   //Resolving branches ang jumps in EX stage, might need to move to MEM stage
   always_comb begin
     newPc = idex.out.npc; // pc+4
     casez(idex.out.pcsrc) 
-      3'd0: newPc = pcif.npc;
+      //3'd0: newPc = pcif.npc;
       3'd2: begin
         newPc = idex.out.rdat1;
       end

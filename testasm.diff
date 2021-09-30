@@ -1,65 +1,79 @@
 processing file asmFiles/test.branchjump1.asm (1 of 1)
-processing file asmFiles/test.branchjump1.asm (1 of 1)
-processing file asmFiles/test.loadstore.asm (1 of 1)
-processing file asmFiles/test.rtype.asm (1 of 1)
 processing file asmFiles/test.ldst1.asm (1 of 2)
 processing file asmFiles/test.ldst2.asm (2 of 2)
+processing file asmFiles/test.rtype.asm (1 of 1)
+processing file asmFiles/test.loadstore.asm (1 of 1)
+processing file asmFiles/mergesort.asm (1 of 1)
+processing file asmFiles/RAW.asm (1 of 1)
+processing file asmFiles/jump_hazard.asm (1 of 1)
+processing file asmFiles/branch_hazard.asm (1 of 1)
+processing file asmFiles/test.branchjump1.asm (1 of 1)
+processing file asmFiles/branch_hazard.asm (1 of 1)
+--- memsim.hex	2021-09-29 21:09:24.478290993 -0400
++++ memcpu.hex	2021-09-29 21:09:24.360286535 -0400
+@@ -7,5 +7,5 @@
+ :04000600FFFFFFFFFA
+ :04000700AC25000024
+ :04000800FFFFFFFFF8
+-:04003C0000000002BE
++:04003C0000000001BF
+ :00000001FF
+processing file asmFiles/jump_hazard.asm (1 of 1)
+--- memsim.hex	2021-09-29 21:10:09.618996395 -0400
++++ memcpu.hex	2021-09-29 21:10:09.506992163 -0400
+@@ -7,5 +7,6 @@
+ :04000600FFFFFFFFFA
+ :04000700AC2400081D
+ :04000800FFFFFFFFF8
++:04003D0000000001BE
+ :04003E0000000002BC
+ :00000001FF
+processing file asmFiles/branch_hazard.asm (1 of 1)
+--- memsim.hex	2021-09-29 21:11:02.432991691 -0400
++++ memcpu.hex	2021-09-29 21:11:02.332987912 -0400
+@@ -7,5 +7,5 @@
+ :04000600FFFFFFFFFA
+ :04000700AC25000024
+ :04000800FFFFFFFFF8
+-:04003C0000000002BE
++:04003C0000000001BF
+ :00000001FF
 processing file asmFiles/branch_hazard.asm (1 of 1)
 processing file asmFiles/jump_hazard.asm (1 of 1)
-processing file asmFiles/load_use.asm (1 of 1)
-processing file asmFiles/raw_hazard.asm (1 of 1)
+processing file asmFiles/test.branchjump1.asm (1 of 1)
+processing file asmFiles/test.ldst1.asm (1 of 2)
+processing file asmFiles/test.ldst2.asm (2 of 2)
+processing file asmFiles/test.rtype.asm (1 of 1)
+--- memsim.hex	2021-09-29 21:30:42.024556341 -0400
++++ memcpu.hex	2021-09-29 21:30:41.958553848 -0400
+@@ -35,7 +35,6 @@
+ :04002500FFFFDA708F
+ :04002600000037F8A7
+ :04002700000021565E
+-:04002800000D269011
+-:04002900000006933A
+-:04003C00FFFF0806B4
++:040028000000D26999
++:0400290000000D26A0
+ :00000001FF
+processing file asmFiles/test.loadstore.asm (1 of 1)
+--- memsim.hex	2021-09-29 21:31:00.509254715 -0400
++++ memcpu.hex	2021-09-29 21:31:00.458252788 -0400
+@@ -13,7 +13,7 @@
+ :040020000000733732
+ :0400210000002701B3
+ :040022000000133790
+-:04002300DEADBEEFA1
++:040023000000BEEF2C
+ :04003C000000733716
+ :04003D000000270197
+ :04003E000000133774
 processing file asmFiles/RAW.asm (1 of 1)
-processing file asmFiles/RAW.asm (1 of 1)
-processing file asmFiles/mult.asm (1 of 1)
-processing file asmFiles/fib.asm (1 of 1)
-processing file asmFiles/mult.asm (1 of 1)
-processing file asmFiles/fib.asm (1 of 1)
---- memsim.hex	2021-09-27 20:55:59.233726326 -0400
-+++ memcpu.hex	2021-09-27 20:55:59.181724355 -0400
-@@ -12,27 +12,24 @@
- :04000B0015E0FFF904
- :04000C00FFFFFFFFF4
- :0400210000000001DA
--:0400220000000001D9
--:0400230000000002D7
--:0400240000000003D5
--:0400250000000005D2
--:0400260000000008CE
--:040027000000000DC8
--:0400280000000015BF
--:0400290000000022B1
--:04002A00000000379B
--:04002B000000005978
--:04002C000000009040
--:04002D00000000E9E6
--:04002E000000017954
--:04002F000000026269
--:04003000000003DBEE
--:040031000000063D88
--:0400320000000A18A8
--:040033000000105564
--:0400340000001A6D41
--:0400350000002AC2DB
--:040036000000452F52
--:0400370000006FF165
-+:0400240000000001D7
-+:0400260000000001D5
-+:0400270000000001D4
-+:0400280000000001D3
-+:0400290000000002D1
-+:04002A0000000002D0
-+:04002B0000000003CE
-+:04002C0000000004CC
-+:04002D0000000005CA
-+:04002E0000000007C7
-+:04002F0000000009C4
-+:040030000000000CC0
-+:0400310000000010BB
-+:0400320000000015B5
-+:040033000000001CAD
-+:0400340000000025A3
-+:040035000000003196
-+:040036000000004185
-+:04003700000000566F
- :0403C0000000001623
+--- memsim.hex	2021-09-29 21:31:59.860497075 -0400
++++ memcpu.hex	2021-09-29 21:31:59.806495034 -0400
+@@ -5,5 +5,4 @@
+ :04000400AC2500081F
+ :0400050020A3111112
+ :04000600FFFFFFFFFA
+-:04003E0000000002BC
  :00000001FF

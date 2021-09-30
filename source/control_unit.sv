@@ -50,7 +50,7 @@ always_comb begin
                 cuif.RegWrite = 1;
             end
             JR: begin
-                cuif.PCsrc = 2'd2; // JR
+                cuif.PCsrc = 3'd2; // JR
             end
             ADD: begin
                 cuif.aluop = ALU_ADD;

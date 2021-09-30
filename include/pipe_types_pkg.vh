@@ -30,6 +30,8 @@ package pipe_types_pkg;
     logic           dWEN;
     logic           dREN;
     logic           halt;
+    logic           flagZero;
+    logic [2:0] pcsrc;
     } ex_mem_t;
 
     typedef struct packed {
@@ -59,7 +61,14 @@ package pipe_types_pkg;
     logic dWEN;
     logic RegWrite;
     logic [4:0] shamt;
+    logic flagZero;
      } ie_t;
+
+    typedef enum logic [2:0] {
+    NO_HAZARD = 3'b000,
+    R_EXMEM_NO_DATA = 3'b001,
+    R_IDEX_NO_DATA = 3'b010
+    } hazard_t;
 
     typedef struct packed {
     word_t           pcPlusFour;

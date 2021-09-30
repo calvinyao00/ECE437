@@ -34,12 +34,14 @@ module ex_mem (
     next_ex_mem_out.dmemaddr = exmemif.ex_mem_in.dmemaddr;
     next_ex_mem_out.dmemstore = exmemif.ex_mem_in.dmemstore;
     next_ex_mem_out.RegDst = exmemif.ex_mem_in.RegDst;
+    next_ex_mem_out.flagZero = exmemif.ex_mem_in.flagZero;
     next_ex_mem_out.jal = exmemif.ex_mem_in.jal;
     next_ex_mem_out.func = exmemif.ex_mem_in.func;
     next_ex_mem_out.opcode = exmemif.ex_mem_in.opcode;
     next_ex_mem_out.rd = exmemif.ex_mem_in.rd;
     next_ex_mem_out.rt = exmemif.ex_mem_in.rt;
     next_ex_mem_out.rs = exmemif.ex_mem_in.rs;
+    next_ex_mem_out.pcsrc = exmemif.ex_mem_in.pcsrc;
     next_ex_mem_out.imm16 = exmemif.ex_mem_in.imm16;
     next_ex_mem_out.shamt = exmemif.ex_mem_in.shamt;
     if (exmemif.dhit) begin

@@ -31,14 +31,14 @@ interface mem_wb_if;
     logic[1:0]      RegSrc;
     logic           halt;
 } mem_wb_t; */
-  logic     EN, flushed;
+  logic     EN, flushed, stall;
   mem_wb_t  mem_wb_in;
   mem_wb_t  mem_wb_out;
   
 
   // EX/MEM reg ports
   modport mem_wb (
-    input   EN, mem_wb_in,flushed,
+    input   EN, mem_wb_in,flushed, stall,
     output  mem_wb_out
   );
 

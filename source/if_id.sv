@@ -8,7 +8,6 @@ import cpu_types_pkg::*;
     if_id_if.pipe ifid
 );
 
-
 always_ff @ (posedge CLK, negedge nRST) begin
     if(!nRST) begin
         ifid.instr <= '0;
@@ -26,5 +25,4 @@ always_ff @ (posedge CLK, negedge nRST) begin
         ifid.pcout <= ifid.PC;
     end
 end
-
 endmodule

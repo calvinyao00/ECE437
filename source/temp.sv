@@ -16,16 +16,30 @@ always_comb begin
     huif.ifid_stall = 0;
     huif.idex_stall = 0;
     
-    if (huif.exmem_rd != 0 && huif.idex_rd != 0 && huif.opcode == RTYPE && huif.func != funct_t'(0)) begin
-        if(huif.func != JR) begin
-            if(huif.rs == huif.exmem_rd || huif.rt == huif.exmem_rd) huif.hazard = R_EXMEM_NO_DATA;
-            else if(huif.rs == huif.idex_rd || huif.rt == huif.idex_rd) huif.hazard = R_IDEX_NO_DATA;
+    if(huif.opcode == RTYPE) begin
+        if (huif.idexRegWrite) begin
+            if(huif.rs == huif.idex_rd || huif.rt == huif.idex_rd) huif.hazard = R_IDEX_NO_DATA;
         end
-        else begin
-            if(huif.rs == huif.exmem_rd) huif.hazard = R_EXMEM_NO_DATA;
-            else if(huif.rs == huif.idex_rd) huif.hazard = R_IDEX_NO_DATA;
+        else if(huif.exmemRegWrite) begin
+            if(huif.rs == huif.exmem_rd || huif.rt == huif.exmem_rd) huif.hazard = R_EXMEM_NO_DATA;
         end
     end
+    else begin
+        if (huif.idexRegWrite) begin
+            if(huif.rs == huif.idex_rt || huif.rt == huif.idex_rt) huif.hazard = R_IDEX_NO_DATA;
+        end
+        else if(huif.exmemRegWrite) begin
+            if(huif.rs == huif.exmem_rt || huif.rt == huif.exmem_rt) huif.hazard = R_EXMEM_NO_DATA;
+        end
+    end
+    /* else if(huif.RegWrite)begin 
+        if(huif.rs == huif.exmem_rt) begin
+            huif.hazard = R_EXMEM_NO_DATA;
+        end
+        else if(huif.rs == huif.idex_rt) begin
+            huif.hazard = R_IDEX_NO_DATA;
+        end
+    end */
     /* else if (huif.opcode == LW) begin
         if(huif.rs == huif.idex_rd) huif.hazard = R_IDEX_NO_DATA;
     end
