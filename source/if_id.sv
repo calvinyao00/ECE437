@@ -8,9 +8,9 @@ import cpu_types_pkg::*;
     if_id_if.pipe ifid
 );
 
-word_t nxt_instr;
+/*word_t nxt_instr;
 word_t nxt_pc;
-word_t nxt_pcout;
+word_t nxt_pcout;*/
 
 always_ff @ (posedge CLK, negedge nRST) begin
     if(!nRST) begin
@@ -23,21 +23,11 @@ always_ff @ (posedge CLK, negedge nRST) begin
         ifid.pc <= '0;
         ifid.pcout <= '0;
     end
-    else if (ifid.ihit | ifid.stall) begin
-        ifid.instr <= nxt_instr;
-        ifid.pc <= nxt_pc;
-        ifid.pcout <= nxt_pcout;
+    else if (ifid.ihit && ~ifid.stall) begin
+        ifid.instr <= ifid.imemload;
+        ifid.pc <= ifid.npc;
+        ifid.pcout <= ifid.PC;
     end
 end
 
-always_comb begin
-    nxt_instr = ifid.imemload;
-    nxt_pc = ifid.npc;
-    nxt_pcout = ifid.PC;
-    if(ifid.stall) begin
-        nxt_instr = ifid.instr;
-        nxt_pc = ifid.pc;
-        nxt_pcout = ifid.pcout;
-    end
-end
 endmodule
