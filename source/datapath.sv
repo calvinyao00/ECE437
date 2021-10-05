@@ -160,7 +160,7 @@ module datapath (
   assign memwbif.mem_wb_in.rs = exmemif.ex_mem_out.rs;
   assign memwbif.mem_wb_in.pcsrc = exmemif.ex_mem_out.pcsrc;
   assign memwbif.mem_wb_in.imm16 = exmemif.ex_mem_out.imm16;
-  assign memwbif.EN = dpif.dhit | dpif.ihit;
+  assign memwbif.EN = 1;//dpif.dhit;
   assign memwbif.flushed = 0;
   assign memwbif.stall = huif.memwb_stall ;//|| (~dpif.ihit);
   assign memwbif.mem_wb_in.shamt = exmemif.ex_mem_out.shamt;
@@ -252,7 +252,7 @@ module datapath (
 
   // PC DUT
   assign pcif.newpc = exmemif.ex_mem_out.pcsrc  == 0 ? pcif.npc : exmemif.ex_mem_out.newPc;
-  assign pcif.pcEN = dpif.ihit & !huif.ifid_stall;
+  assign pcif.pcEN = (dpif.ihit & !huif.ifid_stall) || (exmemif.ex_mem_out.pcsrc != '0);
   //Resolving branches ang jumps in EX stage, might need to move to MEM stage
   always_comb begin
     newPc = idex.out.npc; // pc+4

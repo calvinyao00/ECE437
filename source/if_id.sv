@@ -23,7 +23,7 @@ always_ff @ (posedge CLK, negedge nRST) begin
         ifid.pc <= '0;
         ifid.pcout <= '0;
     end
-    else if (ifid.ihit && ~ifid.stall) begin
+    else if (/*ifid.ihit && */~ifid.stall) begin
         ifid.instr <= ifid.imemload;
         ifid.pc <= ifid.npc;
         ifid.pcout <= ifid.PC;

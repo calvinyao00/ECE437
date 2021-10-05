@@ -39,7 +39,7 @@ always_ff @ (posedge CLK, negedge nRST) begin
         idex.out.RegDst <= 0;
         idex.out.shamt <= '0;
     end
-    else if((idex.flushed && idex.ihit) || idex.stall) begin
+    else if(idex.flushed /*&& idex.ihit) */|| idex.stall) begin
         idex.out.SignedExt <= '0;
         idex.out.ZeroExt <= '0;
         idex.out.BrAddr <= '0;
@@ -67,7 +67,7 @@ always_ff @ (posedge CLK, negedge nRST) begin
         idex.out.RegDst <= 0;
         idex.out.shamt <= '0;
     end
-    else if(idex.ihit)begin
+    else begin /*if(idex.ihit) begin
         /*idex.out.SignedExt <= idex.in.SignedExt;
         idex.out.ZeroExt <= idex.in.ZeroExt;
         idex.out.BrAddr <= idex.in.BrAddr;

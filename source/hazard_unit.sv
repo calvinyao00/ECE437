@@ -47,8 +47,8 @@ always_comb begin
             //end
         //end
     end*/
-    if(!huif.flushed && ((huif.exmem_opcode == LW) || (huif.exmem_opcode == SW)) && ~huif.dhit) begin
-        if(((huif.rs == huif.exmem_write) || (huif.rt == huif.exmem_write))) begin
+    if(!huif.flushed && ((huif.idex_opcode == LW)) && ~huif.dhit) begin
+        if(((huif.rs == huif.idex_rt) || (huif.rt == huif.idex_rt))) begin
             huif.ifid_stall = 1;
             huif.idex_stall = 1;
         end
@@ -56,6 +56,10 @@ always_comb begin
             huif.ifid_stall = 1;
             huif.idex_stall = 1;
         end*/
+    end
+    if((huif.idex_opcode == SW) && !huif.flushed && ~huif.dhit) begin
+        huif.ifid_stall = 1;
+        huif.idex_stall = 1;
     end
 
     //huif.idex_stall = (huif.hazard == R_EXMEM_NO_DATA) | (huif.hazard == R_IDEX_NO_DATA);
