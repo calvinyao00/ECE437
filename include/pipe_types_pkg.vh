@@ -98,6 +98,7 @@ package pipe_types_pkg;
     logic           RegWrite;
     logic[1:0]      RegSrc;
     logic           halt;
+    logic [2:0] pcsrc;
     } mem_wb_t;
 
 endpackage

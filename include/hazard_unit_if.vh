@@ -12,7 +12,7 @@ interface hazard_unit_if;
 // request unit signals
   // hit and enable
   logic               zero, ifid_stall, idex_stall, exmem_stall, memwb_stall, exmem_RegWrite, idex_RegWrite, halt;
-  logic       flushed;//ifid_flushed, idex_flushed, exmem_flushed, memwb_flushed; 
+  logic       dhit, flushed;//ifid_flushed, idex_flushed, exmem_flushed, memwb_flushed; 
 
   logic [2:0] PCsrc;
 
@@ -22,16 +22,16 @@ interface hazard_unit_if;
 
   //funct_t    func;
 
-  regbits_t  rs, rt, exmem_rd, idex_rd, exmem_rt, idex_rt;
+  regbits_t  rs, rt, exmem_write, exmem_rd, idex_rd, exmem_rt, idex_rt;
 
   // datapath ports
   modport  pipe (
-    input   zero, PCsrc, rs, rt, exmem_rd, idex_rd, idex_opcode, exmem_opcode, exmem_rt, idex_rt, exmem_RegWrite, idex_RegWrite,// halt,func,
+    input   zero, PCsrc, rs, dhit, exmem_write, rt, exmem_rd, idex_rd, idex_opcode, exmem_opcode, exmem_rt, idex_rt, exmem_RegWrite, idex_RegWrite,// halt,func,
     output  flushed, hazard, ifid_stall, idex_stall, exmem_stall, memwb_stall
   );
   modport  tb (
     input  flushed, hazard, ifid_stall, idex_stall, exmem_stall, memwb_stall,
-    output   zero, PCsrc, rs, rt, exmem_rd, idex_rd, idex_opcode, exmem_opcode, exmem_rt, idex_rt, exmem_RegWrite, idex_RegWrite// halt,func,
+    output   zero, PCsrc, rs, exmem_write, dhit, rt, exmem_rd, idex_rd, idex_opcode, exmem_opcode, exmem_rt, idex_rt, exmem_RegWrite, idex_RegWrite// halt,func,
   );
 
 endinterface

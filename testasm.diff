@@ -1,9 +1,27 @@
-processing file asmFiles/test.branchjump1.asm (1 of 5)
-processing file asmFiles/test.ldst1.asm (2 of 5)
-processing file asmFiles/test.ldst2.asm (3 of 5)
-processing file asmFiles/test.loadstore.asm (4 of 5)
-processing file asmFiles/test.rtype.asm (5 of 5)
-processing file asmFiles/branch_hazard.asm (1 of 1)
+processing file asmFiles/test.branchjump1.asm (1 of 8)
+processing file asmFiles/test_halt.asm (2 of 8)
+processing file asmFiles/test_jal_jr.asm (3 of 8)
+processing file asmFiles/test_j.asm (4 of 8)
+processing file asmFiles/test.ldst1.asm (5 of 8)
+processing file asmFiles/test.ldst2.asm (6 of 8)
+processing file asmFiles/test.loadstore.asm (7 of 8)
+processing file asmFiles/test.rtype.asm (8 of 8)
+processing file asmFiles/mult.asm (1 of 2)
+processing file asmFiles/mult_procedure.asm (2 of 2)
+--- memsim.hex	2021-10-05 12:48:31.268437186 -0400
++++ memcpu.hex	2021-10-05 12:48:31.139432306 -0400
+@@ -30,7 +30,5 @@
+ :04001D0027BDFFFC00
+ :04001E00AFA6000089
+ :04001F0003E00008F2
+-:043FFC0000000010B1
+-:043FFD00000000A020
+-:043FFE00000013604C
++:043FFD0000000010B0
+ :00000001FF
+processing file asmFiles/fib.asm (1 of 1)
+processing file asmFiles/search.asm (1 of 1)
 processing file asmFiles/jump_hazard.asm (1 of 1)
-processing file asmFiles/RAW.asm (1 of 1)
+processing file asmFiles/branch_hazard.asm (1 of 1)
 processing file asmFiles/load_use.asm (1 of 1)
+processing file asmFiles/RAW.asm (1 of 1)

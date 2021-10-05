@@ -17,6 +17,7 @@
 `include "program_counter_if.vh"
 `include "register_file_if.vh"
 `include "hazard_unit_if.vh"
+`include "forward_unit_if.vh"
 
 // alu op, mips op, and instruction type
 `include "cpu_types_pkg.vh"
@@ -40,6 +41,7 @@ module datapath (
   ex_mem_if exmemif();
   mem_wb_if memwbif();
   hazard_unit_if huif();
+  forward_unit_if fuif();
 
   alu ALU(nRST, aif);
   control_unit CONTROL(cuif);
@@ -50,10 +52,13 @@ module datapath (
   ex_mem EXMEM(CLK, nRST, exmemif);
   mem_wb MEMWB(CLK, nRST, memwbif);
   hazard_unit HAZARD(huif);
+  forward_unit FORWARD(fuif);
 
   word_t JumpAddr;
   logic nxt_halt;
   word_t  newPc;
+  word_t rdat1, rdat2;
+  word_t exmem_forward;
   i_t cuit;
   r_t curt;
   j_t cujt;
@@ -112,7 +117,7 @@ module datapath (
   assign exmemif.ex_mem_in.dmemaddr = aif.portOut;
   //assign exmemif.ex_mem_in.imemaddr = aif.portOut;
   //assign exmemif.ex_mem_in.dmemstore = rfif.rdat2;
-  assign exmemif.ex_mem_in.dmemstore = idex.out.rdat2;
+  assign exmemif.ex_mem_in.dmemstore = rdat2; /////
   assign exmemif.ex_mem_in.BrAddr = idex.out.BrAddr;
   assign exmemif.ex_mem_in.func = idex.out.func;
   assign exmemif.ex_mem_in.dWEN = idex.out.dWEN;
@@ -132,7 +137,7 @@ module datapath (
   assign exmemif.ex_mem_in.rs = idex.out.rs;
   assign exmemif.ex_mem_in.imm16 = idex.out.imm;
   assign exmemif.ex_mem_in.shamt = idex.out.shamt;
-  assign exmemif.stall = huif.exmem_stall;
+  assign exmemif.stall = huif.exmem_stall;//|| (~dpif.ihit);
   assign exmemif.flushed = huif.flushed;
   // MEM/WB latch
   assign memwbif.mem_wb_in.RegDst = exmemif.ex_mem_out.RegDst;
@@ -153,10 +158,11 @@ module datapath (
   assign memwbif.mem_wb_in.rd = exmemif.ex_mem_out.rd;
   assign memwbif.mem_wb_in.rt = exmemif.ex_mem_out.rt;
   assign memwbif.mem_wb_in.rs = exmemif.ex_mem_out.rs;
+  assign memwbif.mem_wb_in.pcsrc = exmemif.ex_mem_out.pcsrc;
   assign memwbif.mem_wb_in.imm16 = exmemif.ex_mem_out.imm16;
   assign memwbif.EN = dpif.dhit | dpif.ihit;
   assign memwbif.flushed = 0;
-  assign memwbif.stall = huif.memwb_stall;
+  assign memwbif.stall = huif.memwb_stall ;//|| (~dpif.ihit);
   assign memwbif.mem_wb_in.shamt = exmemif.ex_mem_out.shamt;
   // HAZARD UNIT
   assign huif.PCsrc = exmemif.ex_mem_out.pcsrc;
@@ -169,9 +175,28 @@ module datapath (
   assign huif.idex_rt = idex.out.rt;
   assign huif.idex_opcode = idex.out.opcode;
   assign huif.exmem_opcode = exmemif.ex_mem_out.opcode;
+  assign huif.dhit = dpif.dhit;
   //assign huif.func = cuif.func;
   assign huif.exmem_RegWrite = exmemif.ex_mem_out.RegWrite;
   assign huif.idex_RegWrite = idex.out.RegWrite;
+  assign huif.exmem_write = fuif.exmem_write;
+  // FORWARD UNIT
+  assign fuif.rs = idex.out.rs;
+  assign fuif.rt = idex.out.rt;
+  assign fuif.exmem_RegWrite = exmemif.ex_mem_out.RegWrite;
+  assign fuif.memwb_RegWrite = memwbif.mem_wb_out.RegWrite;
+  assign fuif.exmem_write = (exmemif.ex_mem_out.RegDst) ? exmemif.ex_mem_out.rt : (exmemif.ex_mem_out.pcsrc == 3'd3) ? 5'b11111 : exmemif.ex_mem_out.rd;
+  assign fuif.memwb_write = (memwbif.mem_wb_out.RegDst) ? memwbif.mem_wb_out.rt : (memwbif.mem_wb_out.pcsrc == 3'd3) ? 5'b11111 : memwbif.mem_wb_out.rd;
+  // decide exmem output
+  always_comb begin
+    exmem_forward = 0;
+    casez(exmemif.ex_mem_out.RegSrc) 
+      2'b00:exmem_forward = exmemif.ex_mem_out.aluOut;
+      2'b01:exmem_forward = {exmemif.ex_mem_out.imm16, 16'b0};
+      2'b10:exmem_forward = memwbif.mem_wb_in.dmemload;
+      2'b11:exmem_forward = exmemif.ex_mem_out.pcPlusFour;
+    endcase
+  end
 //Datapath glue logic
   //instruction fetch
   assign dpif.imemREN = 1;
@@ -184,14 +209,17 @@ module datapath (
   assign rfif.rsel1 = cuif.rs;
   assign rfif.rsel2 = cuif.rt;
   // ALU Excution
+  //decide rdat
+  assign rdat1 = (fuif.forwardA == 2'b01) ? exmem_forward : (fuif.forwardA == 2'b10) ? rfif.wdat : idex.out.rdat1;
+  assign rdat2 = (fuif.forwardB == 2'b01) ? exmem_forward : (fuif.forwardB == 2'b10) ? rfif.wdat : idex.out.rdat2;
   //assign aif.portA = rfif.rdat1;
-  assign aif.portA = idex.out.rdat1;
+  assign aif.portA = rdat1; ////
   always_comb begin
     casez(idex.out.alusrc)
       2'd3: aif.portB = idex.out.ZeroExt;
       2'd2: aif.portB = idex.out.SignedExt;
-      2'd1: aif.portB = idex.out.rdat2;
-      2'd0: aif.portB = idex.out.rdat2;
+      2'd1: aif.portB = rdat2; /////
+      2'd0: aif.portB = rdat2;  /////
     endcase
   end
   assign aif.op = idex.out.aluop;
