@@ -48,7 +48,7 @@ always_comb begin
         //end
     end*/
     if(!huif.flushed && ((huif.idex_opcode == LW)) && ~huif.dhit) begin
-        if(((huif.rs == huif.idex_rt) || (huif.rt == huif.idex_rt))) begin
+        if(((huif.rs == huif.exmem_write/*huif.idex_rt*/) || (huif.rt == huif.exmem_write/*huif.idex_rt*/))) begin
             huif.ifid_stall = 1;
             huif.idex_stall = 1;
         end

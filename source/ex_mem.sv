@@ -71,23 +71,26 @@ module ex_mem (
     end */
     if (exmemif.ex_mem_out.dWEN | exmemif.ex_mem_out.dREN) begin
       if(exmemif.dhit)begin
-        next_ex_mem_out.dmemaddr = exmemif.ex_mem_in.dmemaddr;
+        /*next_ex_mem_out.dmemaddr = exmemif.ex_mem_in.dmemaddr;
         next_ex_mem_out.dmemstore = exmemif.ex_mem_in.dmemstore;
         next_ex_mem_out.dWEN  = exmemif.ex_mem_in.dWEN;
-        next_ex_mem_out.dREN  = exmemif.ex_mem_in.dREN;
+        next_ex_mem_out.dREN  = exmemif.ex_mem_in.dREN;*/
+        next_ex_mem_out = exmemif.ex_mem_in;
       end
       else begin
-        next_ex_mem_out.dmemaddr = exmemif.ex_mem_out.dmemaddr;
+        /*next_ex_mem_out.dmemaddr = exmemif.ex_mem_out.dmemaddr;
         next_ex_mem_out.dmemstore = exmemif.ex_mem_out.dmemstore;
         next_ex_mem_out.dWEN  = exmemif.ex_mem_out.dWEN;
-        next_ex_mem_out.dREN  = exmemif.ex_mem_out.dREN;
+        next_ex_mem_out.dREN  = exmemif.ex_mem_out.dREN;*/
+        next_ex_mem_out = exmemif.ex_mem_out;
       end
     end
     else begin
-      next_ex_mem_out.dmemaddr = exmemif.ex_mem_in.dmemaddr;
+      /*next_ex_mem_out.dmemaddr = exmemif.ex_mem_in.dmemaddr;
       next_ex_mem_out.dmemstore = exmemif.ex_mem_in.dmemstore;
       next_ex_mem_out.dWEN  = exmemif.ex_mem_in.dWEN;
-      next_ex_mem_out.dREN  = exmemif.ex_mem_in.dREN;
+      next_ex_mem_out.dREN  = exmemif.ex_mem_in.dREN;*/
+      next_ex_mem_out = exmemif.ex_mem_in;
     end
     exmemif.stallDmem = exmemif.ex_mem_out.dWEN | exmemif.ex_mem_out.dREN;
   end
