@@ -266,11 +266,13 @@ module datapath (
       end
       3'd4: begin
         if(~aif.flagZero) newPc = idex.out.npc + idex.out.BrAddr;
-        else newPc = idex.out.npc;
+        //else newPc = idex.out.npc;
+        else newPc = pcif.npc;
       end
       3'd5: begin
         if(aif.flagZero) newPc = idex.out.npc + idex.out.BrAddr;
-        else newPc = idex.out.npc;
+        //else newPc = idex.out.npc;
+        else newPc = pcif.npc;
       end
     endcase
   end 
