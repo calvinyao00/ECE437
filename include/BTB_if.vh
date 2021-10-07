@@ -9,13 +9,13 @@ interface BTB_if;
   import cpu_types_pkg::*;
   
   logic [10:0]lookup_index, branch_index;
-  logic     WEN;
+  logic     WEN, hit;
   word_t    wdat, branch_target;
 
   // register file ports
   modport btb (
     input    WEN, lookup_index,branch_index, wdat,
-    output  branch_target
+    output  branch_target, hit
   );
 
 endinterface

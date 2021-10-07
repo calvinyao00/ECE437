@@ -63,6 +63,7 @@ module datapath (
   i_t cuit;
   r_t curt;
   j_t cujt;
+  logic branch_taken;
   assign cuit = i_t'(ifid.instr);
   assign cujt = j_t'(ifid.instr);
   assign curt = r_t'(ifid.instr);
@@ -258,9 +259,10 @@ module datapath (
   // PC DUT
   assign pcif.newpc = exmemif.ex_mem_out.pcsrc  == 0 ? pcif.npc : exmemif.ex_mem_out.newPc;
   assign pcif.pcEN = (dpif.ihit & !huif.ifid_stall) || (exmemif.ex_mem_out.pcsrc != '0);
-  //Resolving branches ang jumps in EX stage, might need to move to MEM stage
+  //Resolving branches ang jumps in EX stage, updating PC in  stage
   always_comb begin
     newPc = idex.out.npc; // pc+4
+    branch_taken = 1;
     casez(idex.out.pcsrc) 
       //3'd0: newPc = pcif.npc;
       3'd2: begin
@@ -272,12 +274,18 @@ module datapath (
       3'd4: begin
         if(~aif.flagZero) newPc = idex.out.npc + idex.out.BrAddr;
         //else newPc = idex.out.npc;
-        else newPc = pcif.npc;
+        else begin
+          branch_taken = 0;
+          newPc = pcif.npc;
+        end
       end
       3'd5: begin
         if(aif.flagZero) newPc = idex.out.npc + idex.out.BrAddr;
         //else newPc = idex.out.npc;
-        else newPc = pcif.npc;
+        else begin
+          branch_taken = 0;
+          newPc = pcif.npc;
+        end
       end
     endcase
   end 
