@@ -1,62 +1,59 @@
-`include "hazard_unit_if.vh"
-`include "pipe_types_pkg.vh"
+/*
+  Eric Villasenor
+  evillase@gmail.com
 
-module hazard_unit
-(
-    hazard_unit_if.pipe huif
-);
+  this block is the coherence protocol
+  and artibtration for ram
+*/
+
+// interface include
+`include "cache_control_if.vh"
+
+// memory types
+`include "cpu_types_pkg.vh"
+
+module memory_control 
 import cpu_types_pkg::*;
-import pipe_types_pkg::*;
-assign huif.flushed = ((huif.PCsrc == 4) && ~huif.zero) || ((huif.PCsrc == 5) && huif.zero) || huif.PCsrc == 2 || huif.PCsrc == 3;
+(
+  input CLK, nRST,
+  cache_control_if.cc ccif
+);
+  // type import
+  import cpu_types_pkg::*;
 
-always_comb begin 
-    huif.hazard = NO_HAZARD;
-    huif.exmem_stall = 0;
-    huif.memwb_stall = 0;
-    huif.ifid_stall = 0;
-    huif.idex_stall = 0;
-    
-    if(huif.opcode == RTYPE) begin
-        if (huif.idexRegWrite) begin
-            if(huif.rs == huif.idex_rd || huif.rt == huif.idex_rd) huif.hazard = R_IDEX_NO_DATA;
-        end
-        else if(huif.exmemRegWrite) begin
-            if(huif.rs == huif.exmem_rd || huif.rt == huif.exmem_rd) huif.hazard = R_EXMEM_NO_DATA;
-        end
-    end
-    else begin
-        if (huif.idexRegWrite) begin
-            if(huif.rs == huif.idex_rt || huif.rt == huif.idex_rt) huif.hazard = R_IDEX_NO_DATA;
-        end
-        else if(huif.exmemRegWrite) begin
-            if(huif.rs == huif.exmem_rt || huif.rt == huif.exmem_rt) huif.hazard = R_EXMEM_NO_DATA;
-        end
-    end
-    /* else if(huif.RegWrite)begin 
-        if(huif.rs == huif.exmem_rt) begin
-            huif.hazard = R_EXMEM_NO_DATA;
-        end
-        else if(huif.rs == huif.idex_rt) begin
-            huif.hazard = R_IDEX_NO_DATA;
-        end
-    end */
-    /* else if (huif.opcode == LW) begin
-        if(huif.rs == huif.idex_rd) huif.hazard = R_IDEX_NO_DATA;
-    end
-    else if (huif.opcode == SW) begin
-        if(huif.rs == huif.idex_rd || huif.rt == huif.idex_rd) huif.hazard = R_IDEX_NO_DATA;
-    end */
-//    else if (huif.opcode == RTYPE && huif.PCsrc == 2'd2) begin
-//        if(huif.rs == huif.exmem_rd) huif.hazard = JR_EXMEM_NO_DATA;
-//        else if(huif.rs == huif.idex_rd) huif.hazard = JR_IDEX_NO_DATA;
-//    end 
-    huif.idex_stall = (huif.hazard == R_EXMEM_NO_DATA);
-    huif.ifid_stall = (huif.hazard == R_IDEX_NO_DATA) | huif.idex_stall;
-end   
+  // number of cpus for cc
+  parameter CPUS = 2;
 
-/* assign huif.exmem_stall = 0;
-    assign huif.memwb_stall = 0;
-    assign huif.ifid_stall = 0;
-    assign huif.idex_stall = 0; */
+  always_comb begin
+    ccif.dwait = (ccif.dREN | ccif.dWEN) ? (ccif.ramstate == BUSY || ccif.ramstate == ERROR) : 0;
+    ccif.iload = (!ccif.dREN & !ccif.dWEN) ? ((ccif.ramstate == ACCESS) ? ccif.ramload : 0) : '0;
+    ccif.dload = ccif.dREN ? ccif.ramload : '0;
+    ccif.ramstore = ccif.dWEN ? ccif.dstore : '0;
+    ccif.ramaddr = (ccif.dREN | ccif.dWEN) ? ccif.daddr : (ccif.iREN ? ccif.iaddr : '0);
+    ccif.ramWEN = ccif.dWEN;
+    ccif.ramREN = ccif.dREN ? ccif.dREN : (!ccif.dWEN && ccif.iREN);
+    ccif.ccwait = 0;
+    ccif.ccinv = 0;
+    ccif.ccsnoopaddr = '0;
+    //if (ccif.dREN) begin
+      //ccif.ramREN = ccif.dREN;
+      //ccif.ramaddr = ccif.daddr;
+      //ccif.dwait = (ccif.ramstate == BUSY || ccif.ramstate == ERROR);
+      //ccif.dload = ccif.ramload;
+    //end
+    //else if(ccif.dWEN) begin
+      //ccif.ramWEN = ccif.dWEN;
+      //ccif.ramaddr = ccif.daddr;
+      //ccif.dwait = (ccif.ramstate == BUSY || ccif.ramstate == ERROR);
+      //ccif.ramstore = ccif.dstore;
+    //end
+   // else if (ccif.iREN) begin
+      //ccif.ramREN = ccif.iREN;
+      //ccif.ramaddr = ccif.iaddr;
+      //ccif.iload = (ccif.ramstate == ACCESS) ? ccif.ramload : 0;
+    //end
+
+    ccif.iwait = (ccif.ramstate == ACCESS) ? !(!ccif.dREN && !ccif.dWEN && ccif.iREN) : 1;
+  end
 
 endmodule

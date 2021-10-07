@@ -18,7 +18,7 @@
 `include "register_file_if.vh"
 `include "hazard_unit_if.vh"
 `include "forward_unit_if.vh"
-
+`include "BTB_if.vh"
 // alu op, mips op, and instruction type
 `include "cpu_types_pkg.vh"
 
@@ -42,7 +42,7 @@ module datapath (
   mem_wb_if memwbif();
   hazard_unit_if huif();
   forward_unit_if fuif();
-
+  BTB_if btbif();
   alu ALU(nRST, aif);
   control_unit CONTROL(cuif);
   register_file REGISTER(CLK, nRST, rfif);
@@ -53,9 +53,10 @@ module datapath (
   mem_wb MEMWB(CLK, nRST, memwbif);
   hazard_unit HAZARD(huif);
   forward_unit FORWARD(fuif);
+  BTB btb(CLK, nRST, btbif);
 
   word_t JumpAddr;
-  logic nxt_halt;
+  logic halt, nxt_halt;
   word_t  newPc;
   word_t rdat1, rdat2;
   word_t exmem_forward;
@@ -69,6 +70,11 @@ module datapath (
   //assign npc = PC + 4;
 
   assign JumpAddr = {idex.out.npc[31:28], idex.out.instr[25:0], 2'b00};
+  assign btbif.WEN = (cuif.opcode == BNE | cuif.opcode == BEQ);
+  assign btbif.branch_index = ifid.PC[12:2];
+  assign btbif.wdat = cuif.BranchAddr;
+  assign btbif.lookup_index = pcif.PC[12:2];
+
 
   // IF/ID latch
   assign ifid.PC = pcif.PC; //// PC
@@ -228,7 +234,6 @@ module datapath (
   assign dpif.dmemWEN = exmemif.ex_mem_out.dWEN;
   assign dpif.dmemstore = exmemif.ex_mem_out.dmemstore;
   assign dpif.dmemaddr = exmemif.ex_mem_out.dmemaddr;
-  //Register Write Back
 
   // Register File DUT
   always_comb begin 
@@ -276,5 +281,14 @@ module datapath (
       end
     endcase
   end 
-  assign dpif.halt = memwbif.mem_wb_out.halt;
+
+  always_ff @ (negedge nRST, posedge CLK) begin
+    if(!nRST) halt <= 0;
+    else halt <= memwbif.mem_wb_out.halt | halt;
+  end
+  /*always_comb begin
+    nxt_halt = memwbif.mem_wb_out.halt | halt;
+  end*/
+
+  assign dpif.halt = halt;
 endmodule
