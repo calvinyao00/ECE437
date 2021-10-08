@@ -19,6 +19,7 @@
 `include "hazard_unit_if.vh"
 `include "forward_unit_if.vh"
 `include "BTB_if.vh"
+`include "BPT_if.vh"
 // alu op, mips op, and instruction type
 `include "cpu_types_pkg.vh"
 
@@ -43,6 +44,7 @@ module datapath (
   hazard_unit_if huif();
   forward_unit_if fuif();
   BTB_if btbif();
+  BPT_if bptif();
   alu ALU(nRST, aif);
   control_unit CONTROL(cuif);
   register_file REGISTER(CLK, nRST, rfif);
@@ -54,7 +56,7 @@ module datapath (
   hazard_unit HAZARD(huif);
   forward_unit FORWARD(fuif);
   BTB btb(CLK, nRST, btbif);
-
+  BPT bpt(CLK, nRST, bptif);  
   word_t JumpAddr;
   logic halt, nxt_halt;
   word_t  newPc;
@@ -64,10 +66,11 @@ module datapath (
   r_t curt;
   j_t cujt;
   logic branch_taken;
+  opcode_t opcode;
   assign cuit = i_t'(ifid.instr);
   assign cujt = j_t'(ifid.instr);
   assign curt = r_t'(ifid.instr);
-
+  assign opcode = opcode_t'(dpif.imemload[31:26]);
   //assign npc = PC + 4;
 
   assign JumpAddr = {idex.out.npc[31:28], idex.out.instr[25:0], 2'b00};
@@ -84,6 +87,11 @@ module datapath (
   assign ifid.ihit = dpif.ihit;
   assign ifid.flushed = huif.flushed;
   assign ifid.stall = huif.ifid_stall;
+
+  assign bptif.WEN = (exmemif.ex_mem_out.opcode == BNE | exmemif.ex_mem_out.opcode == BEQ);
+  assign bptif.branch_index = exmemif.ex_mem_out.pc[12:2];
+  assign bptif.result = 0;
+  assign bptif.lookup_index = pcif.PC[12:2];
   // ID/EX latch
   assign idex.ihit = dpif.ihit;
   assign idex.in.SignedExt = cuif.SignedExt;
@@ -105,7 +113,7 @@ module datapath (
   assign idex.in.func = cuif.func;
   assign idex.in.addr = cuif.addr;
   assign idex.in.halt = cuif.halt;
-  //assign idex.in.flagZero = cuif.flagZero;
+  //assign idex.in.flagZero Error (10161): Verilog HDL error at BPT.sv(28): object "btbif" is not declared File: /home/ecegrid/a/mg215/ece437/processors/source/BPT.sv Line:= cuif.flagZero;
   assign idex.in.imm = cuif.imm;
   assign idex.in.instr = ifid.instr;
   assign idex.in.opcode = cuif.opcode;
@@ -118,7 +126,7 @@ module datapath (
   // EX/MEM latch
   assign exmemif.dhit = dpif.dhit;
   assign exmemif.ihit = dpif.ihit;
-  assign exmemif.ex_mem_in.newPc = newPc;
+  //assign exmemif.ex_mem_in.newPc = newPc;
   assign exmemif.ex_mem_in.pc = idex.out.pc;
   assign exmemif.ex_mem_in.aluOut = aif.portOut;
   assign exmemif.ex_mem_in.dmemaddr = aif.portOut;
@@ -138,12 +146,17 @@ module datapath (
   assign exmemif.ex_mem_in.RegWrite = idex.out.RegWrite;
   assign exmemif.ex_mem_in.RegSrc = idex.out.RegSrc;
   assign exmemif.ex_mem_in.imemload = idex.out.instr;
+  assign exmemif.ex_mem_in.npc = pcif.npc;
   assign exmemif.ex_mem_in.RegDst = idex.out.RegDst;
   assign exmemif.ex_mem_in.rd = idex.out.rd;
   assign exmemif.ex_mem_in.rt = idex.out.rt;
   assign exmemif.ex_mem_in.rs = idex.out.rs;
   assign exmemif.ex_mem_in.imm16 = idex.out.imm;
   assign exmemif.ex_mem_in.shamt = idex.out.shamt;
+  assign exmemif.ex_mem_in.rdat1 = idex.out.rdat1;
+  //assign exmemif.ex_mem_in.BranchAddr = idex.out.BranchAddr;
+  assign exmemif.ex_mem_in.JumpAddr = JumpAddr;
+  
   assign exmemif.stall = huif.exmem_stall;//|| (~dpif.ihit);
   assign exmemif.flushed = huif.flushed;
   // MEM/WB latch
@@ -155,7 +168,7 @@ module datapath (
   assign memwbif.mem_wb_in.func = exmemif.ex_mem_out.func;
   assign memwbif.mem_wb_in.opcode = exmemif.ex_mem_out.opcode;
   assign memwbif.mem_wb_in.pc = exmemif.ex_mem_out.pc;
-  assign memwbif.mem_wb_in.newPc = exmemif.ex_mem_out.newPc;
+  assign memwbif.mem_wb_in.newPc = newPc;
   assign memwbif.mem_wb_in.BrAddr = exmemif.ex_mem_out.BrAddr;
   assign memwbif.mem_wb_in.dmemstore = exmemif.ex_mem_out.dmemstore;
   assign memwbif.mem_wb_in.pcPlusFour = exmemif.ex_mem_out.pcPlusFour;
@@ -217,6 +230,20 @@ module datapath (
   assign rfif.rsel2 = cuif.rt;
   // ALU Excution
   //decide rdat
+/*   always_comb begin
+    casez(fuif.forwardA)
+      2'b01: rdat1 = exmem_forward;
+      2'b10: rdat1 = rfif.wdat;
+      default: rdat1 = idex.out.rdat1; /////
+    endcase
+  end
+  always_comb begin
+    casez(fuif.forwardB)
+      2'b01: rdat2 = exmem_forward;
+      2'b10: rdat2 = rfif.wdat;
+      default: rdat2 = idex.out.rdat2; /////
+    endcase
+  end */
   assign rdat1 = (fuif.forwardA == 2'b01) ? exmem_forward : (fuif.forwardA == 2'b10) ? rfif.wdat : idex.out.rdat1;
   assign rdat2 = (fuif.forwardB == 2'b01) ? exmem_forward : (fuif.forwardB == 2'b10) ? rfif.wdat : idex.out.rdat2;
   //assign aif.portA = rfif.rdat1;
@@ -257,34 +284,41 @@ module datapath (
  
 
   // PC DUT
-  assign pcif.newpc = exmemif.ex_mem_out.pcsrc  == 0 ? pcif.npc : exmemif.ex_mem_out.newPc;
+  /*always_comb begin
+  if (opcode == BNE || opcode == BEQ) begin
+    pcif.newpc
+  end
+  pcif.newpc = exmemif.ex_mem_out.pcsrc  == 0 ? pcif.npc : exmemif.ex_mem_out.newPc;
+  end*/
+  assign pcif.newpc = exmemif.ex_mem_out.pcsrc  == 0 ? pcif.npc : newPc;
+  
   assign pcif.pcEN = (dpif.ihit & !huif.ifid_stall) || (exmemif.ex_mem_out.pcsrc != '0);
   //Resolving branches ang jumps in EX stage, updating PC in  stage
   always_comb begin
-    newPc = idex.out.npc; // pc+4
+    newPc = exmemif.ex_mem_out.npc; // pc+4
     branch_taken = 1;
-    casez(idex.out.pcsrc) 
+    casez(exmemif.ex_mem_out.pcsrc) 
       //3'd0: newPc = pcif.npc;
       3'd2: begin
-        newPc = idex.out.rdat1;
+        newPc = exmemif.ex_mem_out.rdat1;
       end
       3'd3: begin
-        newPc = JumpAddr;
+        newPc = exmemif.ex_mem_out.JumpAddr;
       end
       3'd4: begin
-        if(~aif.flagZero) newPc = idex.out.npc + idex.out.BrAddr;
+        if(~exmemif.ex_mem_out.flagZero) newPc = exmemif.ex_mem_out.pcPlusFour + exmemif.ex_mem_out.BrAddr;
         //else newPc = idex.out.npc;
         else begin
           branch_taken = 0;
-          newPc = pcif.npc;
+          newPc =  exmemif.ex_mem_out.npc;
         end
       end
       3'd5: begin
-        if(aif.flagZero) newPc = idex.out.npc + idex.out.BrAddr;
+        if(exmemif.ex_mem_out.flagZero) newPc = exmemif.ex_mem_out.pcPlusFour + exmemif.ex_mem_out.BrAddr;
         //else newPc = idex.out.npc;
         else begin
           branch_taken = 0;
-          newPc = pcif.npc;
+          newPc =  exmemif.ex_mem_out.npc;
         end
       end
     endcase
@@ -292,11 +326,11 @@ module datapath (
 
   always_ff @ (negedge nRST, posedge CLK) begin
     if(!nRST) halt <= 0;
-    else halt <= memwbif.mem_wb_out.halt | halt;
+    else halt <= nxt_halt;//memwbif.mem_wb_out.halt | halt;
   end
-  /*always_comb begin
+  always_comb begin
     nxt_halt = memwbif.mem_wb_out.halt | halt;
-  end*/
+  end
 
   assign dpif.halt = halt;
 endmodule

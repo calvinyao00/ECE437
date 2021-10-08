@@ -22,7 +22,7 @@ module ex_mem (
 	  	end
   end
   always_comb begin : CONTROL_LOGIC
-    next_ex_mem_out.newPc = exmemif.ex_mem_in.newPc;
+    //next_ex_mem_out.newPc = exmemif.ex_mem_in.newPc;
     next_ex_mem_out.RegWrite = exmemif.ex_mem_in.RegWrite;
     next_ex_mem_out.RegSrc = exmemif.ex_mem_in.RegSrc;
     next_ex_mem_out.halt = exmemif.ex_mem_in.halt;
@@ -44,6 +44,11 @@ module ex_mem (
     next_ex_mem_out.pcsrc = exmemif.ex_mem_in.pcsrc;
     next_ex_mem_out.imm16 = exmemif.ex_mem_in.imm16;
     next_ex_mem_out.shamt = exmemif.ex_mem_in.shamt;
+    next_ex_mem_out.rdat1 = exmemif.ex_mem_in.rdat1;
+    next_ex_mem_out.JumpAddr = exmemif.ex_mem_in.JumpAddr;
+    next_ex_mem_out.npc = exmemif.ex_mem_in.npc;
+    //next_ex_mem_out.BrAddr = exmemif.ex_mem_in.BranchAddr;
+
 /*    end
      else begin
       next_ex_mem_out.newPc = exmemif.ex_mem_out.newPc;

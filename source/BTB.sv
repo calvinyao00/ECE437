@@ -1,3 +1,5 @@
+`include "BTB_if.vh"
+
 module BTB (
     input logic CLK,
     input logic nRST,

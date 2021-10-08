@@ -5,15 +5,18 @@
 package pipe_types_pkg;
   import cpu_types_pkg::*;
   typedef struct packed {
-    word_t           newPc;
+    //word_t           newPc;
     word_t pc;
     word_t           aluOut;
     word_t           dmemaddr;
-    word_t BrAddr;
+    word_t           BrAddr;
     //word_t           imemaddr;
     word_t           imemload;
     word_t           dmemstore;
     word_t           pcPlusFour;
+    word_t           rdat1;
+    //word_t           BrAddr;
+    word_t           JumpAddr;
     //logic           dMemWrite;
     //logic           dMemRead;
     regbits_t       rd;
@@ -31,6 +34,7 @@ package pipe_types_pkg;
     logic           dREN;
     logic           halt;
     logic           flagZero;
+    word_t    npc;
     logic [2:0] pcsrc;
     } ex_mem_t;
 
