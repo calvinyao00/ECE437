@@ -127,13 +127,22 @@ initial begin
     #(PERIOD * 2);
   end
   //*******************************************
-  // Test Case 3: Conflict at index 0
+  // Test Case 8: Conflict at index 0
   // *******************************************
   test_case_num += 1;
   test_case = "Conflict at index 15";
   read_cache(1'b1, 26'd1, 4'hf, 2'b00);
   feed_intr(32'hbeefbeef);
   #(PERIOD * 4);
+  
+  //*******************************************
+  // Test Case 8: Conflict at index 0
+  // *******************************************
+  test_case_num += 1;
+  test_case = "Halted";
+  dcif.halt = 1;
+  #(PERIOD * 4);
+
 end
 task reset_dut;
 begin

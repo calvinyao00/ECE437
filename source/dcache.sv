@@ -92,21 +92,23 @@ always_comb begin
     nxt_recent = recent;
     nxt_hit_counter = hit_counter;
     dcif.flushed = (state == HALT);
-    
+    nxt_dcaches = dcaches;
     casez(state) 
         IDLE: begin
-            nxt_hit_counter = hit_counter + 1;
+            nxt_hit_counter = hit_counter;
             if(dcif.halt) nxt_hit_counter = hit_counter;
             else if(dcif.dmemWEN) begin
                 if(addr.tag == dcaches[addr.idx][0].tag) begin
                     dcif.dhit = 1;
 					nxt_dcaches[addr.idx][0].dirty = 1;
+                    nxt_hit_counter = hit_counter + 1;
                     nxt_dcaches[addr.idx][0].data[addr.blkoff] = dcif.dmemstore;
                     nxt_recent[addr.idx] = 1; // old
                 end
                 else if(addr.tag == dcaches[addr.idx][1].tag) begin
                     dcif.dhit = 1;
 					nxt_dcaches[addr.idx][1].dirty = 1;
+                    nxt_hit_counter = hit_counter + 1;
                     nxt_dcaches[addr.idx][1].data[addr.blkoff] = dcif.dmemstore;
                     nxt_recent[addr.idx] = 0; // old
                 end
@@ -118,10 +120,12 @@ always_comb begin
             else if(dcif.dmemREN) begin
                 if ((addr.tag == dcaches[addr.idx][0].tag) & dcaches[addr.idx][0].valid) begin
 					dcif.dhit = 1;
+                    nxt_hit_counter = hit_counter + 1;
                     dcif.dmemload = dcaches[addr.idx][0].data[addr.blkoff];
 					nxt_recent[addr.idx] = 1;
-				end else if ((addr.tag == dcaches[addr.idx][0].tag) & dcaches[addr.idx][1].valid) begin
+				end else if ((addr.tag == dcaches[addr.idx][1].tag) & dcaches[addr.idx][1].valid) begin
 					dcif.dhit = 1;
+                    nxt_hit_counter = hit_counter + 1;
 					dcif.dmemload = dcaches[addr.idx][1].data[addr.blkoff];
 					nxt_recent[addr.idx] = 0;
 				end else begin

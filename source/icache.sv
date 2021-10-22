@@ -33,19 +33,21 @@ module icache(
     always_comb begin
         cache_hit = 0;
         next_icaches = icaches;
-        dcif.ihit = 0;
+        //dcif.ihit = 0;
         cif.iREN = 0;
         cif.iaddr = 0;
         dcif.imemload= 0;
         if (ihit) begin    
-            next_icaches[addr.idx].data <= cif.iload;
-            next_icaches[addr.idx].valid <= 1;
-            next_icaches[addr.idx].tag <= addr.tag;
+            next_icaches[addr.idx].data = cif.iload;
+            next_icaches[addr.idx].valid = 1;
+            next_icaches[addr.idx].tag = addr.tag;
         end
 
         if(dcif.halt) begin
             //halted
+            dcif.ihit = 0;
 		    dcif.imemload = 0;
+            next_icaches = 0;
         end
         else if(dcif.imemREN && !dcif.dmemREN && !dcif.dmemWEN) begin
             //dcif.ihit = (ihit || cache_hit);
