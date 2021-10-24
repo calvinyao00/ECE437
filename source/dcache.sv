@@ -15,10 +15,11 @@ import cpu_types_pkg::*;
 logic dhit;
 logic miss, hit;
 logic [7:0] recent, nxt_recent;
-logic [3:0] iteration, nxt_iteration;
+logic [4:0] iteration, nxt_iteration, itera;
 dcachef_t addr;
 word_t hit_counter, nxt_hit_counter;
 dcache_frame[7:0][1:0] dcaches, nxt_dcaches;
+
 
 logic[7:0][1:0] empty;
 assign empty = '0;
@@ -65,15 +66,18 @@ always_comb begin
         ALLO2: if(!cif.dwait) nxt_state = IDLE;
         HALT: begin
             if(iteration < 8) begin
-                if(dcaches[iteration][0].dirty) nxt_state = FLUSH11;
+                if(dcaches[iteration[2:0]][0].dirty) nxt_state = FLUSH11;
             end
             else begin
+                if(dcaches[iteration[2:0]][1].dirty) nxt_state = FLUSH21;
+            end
+            if(iteration == 5'd16) begin
                 nxt_state = COUNT;
             end
             nxt_iteration = iteration + 1;
         end
         FLUSH11: if(!cif.dwait) nxt_state = FLUSH12;
-        FLUSH12: if(!cif.dwait) nxt_state = FLUSH21;
+        FLUSH12: if(!cif.dwait) nxt_state = HALT;
         FLUSH21: if(!cif.dwait) nxt_state = FLUSH22;
         FLUSH22: if(!cif.dwait) nxt_state = HALT;
         COUNT: if(!cif.dwait) nxt_state = END;
@@ -91,8 +95,9 @@ always_comb begin
     dcif.dmemload = '0;
     nxt_recent = recent;
     nxt_hit_counter = hit_counter;
-    dcif.flushed = (state == HALT);
+    dcif.flushed = (state == END);
     nxt_dcaches = dcaches;
+    itera = iteration - 1;
     casez(state) 
         IDLE: begin
             nxt_hit_counter = hit_counter;
@@ -113,8 +118,11 @@ always_comb begin
                     nxt_recent[addr.idx] = 0; // old
                 end
                 else begin
-                    miss = 1;
-                    nxt_hit_counter = hit_counter - 1;
+                    dcif.dhit = 1;
+                    nxt_dcaches[addr.idx][recent[addr.idx]].data[addr.blkoff] = dcif.dmemstore;
+                    nxt_dcaches[addr.idx][recent[addr.idx]].tag = addr.tag;
+                    nxt_dcaches[addr.idx][recent[addr.idx]].valid = 1;
+                    nxt_dcaches[addr.idx][recent[addr.idx]].dirty = 1;
                 end
             end
             else if(dcif.dmemREN) begin
@@ -157,10 +165,10 @@ always_comb begin
             end
         end
         ALLO1: begin
-            cif.dREN = 1;
-            cif.daddr = {addr.tag, addr.idx, 3'd0};
-            if(recent[addr.idx] == 0) nxt_dcaches[addr.idx][0].data[0] = cif.dload;
-            else nxt_dcaches[addr.idx][1].data[0] = cif.dload;
+                cif.dREN = 1;
+                cif.daddr = {addr.tag, addr.idx, 3'd0};
+                if(recent[addr.idx] == 0) nxt_dcaches[addr.idx][0].data[0] = cif.dload;
+                else nxt_dcaches[addr.idx][1].data[0] = cif.dload;
         end
         ALLO2: begin
             cif.dREN = 1;
@@ -185,23 +193,23 @@ always_comb begin
         end
         FLUSH11: begin
             cif.dWEN = 1;
-            cif.daddr = {dcaches[iteration][0].tag, iteration, 3'd0};
-			cif.dstore = dcaches[iteration][0].data[0];
+            cif.daddr = {dcaches[itera[2:0]][0].tag, itera[2:0], 3'd0};
+			cif.dstore = dcaches[itera[2:0]][0].data[0];
         end
         FLUSH12: begin
             cif.dWEN = 1;
-            cif.daddr = {dcaches[iteration][0].tag, iteration, 3'd4};
-			cif.dstore = dcaches[iteration][0].data[1];
+            cif.daddr = {dcaches[itera[2:0]][0].tag, itera[2:0], 3'd4};
+			cif.dstore = dcaches[itera[2:0]][0].data[1];
         end
         FLUSH21: begin
             cif.dWEN = 1;
-            cif.daddr = {dcaches[iteration][1].tag, iteration, 3'd0};
-			cif.dstore = dcaches[iteration][1].data[0];
+            cif.daddr = {dcaches[itera[2:0]][1].tag, itera[2:0], 3'd0};
+			cif.dstore = dcaches[itera[2:0]][1].data[0];
         end
         FLUSH22: begin
             cif.dWEN = 1;
-            cif.daddr = {dcaches[iteration][1].tag, iteration, 3'd4};
-			cif.dstore = dcaches[iteration][1].data[1];
+            cif.daddr = {dcaches[itera[2:0]][1].tag, itera[2:0], 3'd4};
+			cif.dstore = dcaches[itera[2:0]][1].data[1];
         end
     endcase
 end

@@ -112,7 +112,7 @@ module datapath (
   assign idex.in.aluop = cuif.aluop;
   assign idex.in.func = cuif.func;
   assign idex.in.addr = cuif.addr;
-  assign idex.in.halt = cuif.halt;
+  assign idex.in.halt = halt;
   //assign idex.in.flagZero Error (10161): Verilog HDL error at BPT.sv(28): object "btbif" is not declared File: /home/ecegrid/a/mg215/ece437/processors/source/BPT.sv Line:= cuif.flagZero;
   assign idex.in.imm = cuif.imm;
   assign idex.in.instr = ifid.instr;
@@ -329,8 +329,8 @@ module datapath (
     else halt <= nxt_halt;//memwbif.mem_wb_out.halt | halt;
   end
   always_comb begin
-    nxt_halt = memwbif.mem_wb_out.halt | halt;
+    nxt_halt = cuif.halt | halt; //memwbif.mem_wb_out.halt | halt;
   end
 
-  assign dpif.halt = halt;
+  assign dpif.halt = memwbif.mem_wb_out.halt;
 endmodule

@@ -96,7 +96,7 @@ add wave -noupdate -color Yellow -itemcolor Yellow /system_tb/DUT/CPU/DP/exmemif
 add wave -noupdate -color Yellow -itemcolor Yellow /system_tb/DUT/CPU/DP/exmemif/stallDmem
 add wave -noupdate -color Yellow -itemcolor Yellow /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.pc
 add wave -noupdate -color Yellow -itemcolor Yellow /system_tb/DUT/CPU/DP/exmemif/ex_mem_in
-add wave -noupdate -color Yellow -itemcolor Yellow -expand -subitemconfig {/system_tb/DUT/CPU/DP/exmemif/ex_mem_out.newPc {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.pc {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.aluOut {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.dmemaddr {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.BrAddr {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.imemload {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.dmemstore {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.pcPlusFour {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.rd {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.rt {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.rs {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.imm16 {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.jal {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.func {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.shamt {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.RegDst {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.opcode {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.RegWrite {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.RegSrc {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.dWEN {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.dREN {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.halt {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.flagZero {-color Yellow -height 16 -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.pcsrc {-color Yellow -height 16 -itemcolor Yellow}} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out
+add wave -noupdate -color Yellow -itemcolor Yellow /system_tb/DUT/CPU/DP/exmemif/ex_mem_out
 add wave -noupdate -divider {mem wb}
 add wave -noupdate /system_tb/DUT/CPU/DP/memwbif/EN
 add wave -noupdate /system_tb/DUT/CPU/DP/memwbif/stall
@@ -123,7 +123,7 @@ add wave -noupdate /system_tb/DUT/CPU/DP/huif/exmem_rd
 add wave -noupdate /system_tb/DUT/CPU/DP/huif/idex_rd
 add wave -noupdate /system_tb/DUT/CPU/DP/huif/exmem_rt
 add wave -noupdate /system_tb/DUT/CPU/DP/huif/idex_rt
-add wave -noupdate /system_tb/DUT/CPU/DP/REGISTER/regis
+add wave -noupdate -expand /system_tb/DUT/CPU/DP/REGISTER/regis
 add wave -noupdate -divider {Forward Unit}
 add wave -noupdate /system_tb/DUT/CPU/DP/rdat1
 add wave -noupdate /system_tb/DUT/CPU/DP/rdat2
@@ -146,9 +146,47 @@ add wave -noupdate /system_tb/DUT/prif/memREN
 add wave -noupdate /system_tb/DUT/prif/memWEN
 add wave -noupdate /system_tb/DUT/prif/memaddr
 add wave -noupdate /system_tb/DUT/prif/memstore
+add wave -noupdate -divider halt
+add wave -noupdate /system_tb/DUT/CPU/DP/halt
+add wave -noupdate /system_tb/DUT/CPU/DP/nxt_halt
+add wave -noupdate /system_tb/DUT/CPU/DP/memwbif/mem_wb_out.halt
+add wave -noupdate -divider DCACHE
+add wave -noupdate /system_tb/DUT/CPU/CM/DCACHE/CLK
+add wave -noupdate /system_tb/DUT/CPU/CM/DCACHE/nRST
+add wave -noupdate /system_tb/DUT/CPU/CM/DCACHE/dhit
+add wave -noupdate /system_tb/DUT/CPU/CM/DCACHE/miss
+add wave -noupdate /system_tb/DUT/CPU/CM/DCACHE/hit
+add wave -noupdate /system_tb/DUT/CPU/CM/DCACHE/recent
+add wave -noupdate /system_tb/DUT/CPU/CM/DCACHE/nxt_recent
+add wave -noupdate /system_tb/DUT/CPU/CM/DCACHE/iteration
+add wave -noupdate /system_tb/DUT/CPU/CM/DCACHE/nxt_iteration
+add wave -noupdate /system_tb/DUT/CPU/CM/DCACHE/addr
+add wave -noupdate /system_tb/DUT/CPU/CM/DCACHE/hit_counter
+add wave -noupdate /system_tb/DUT/CPU/CM/DCACHE/nxt_hit_counter
+add wave -noupdate /system_tb/DUT/CPU/CM/DCACHE/dcaches
+add wave -noupdate /system_tb/DUT/CPU/CM/DCACHE/nxt_dcaches
+add wave -noupdate /system_tb/DUT/CPU/CM/DCACHE/empty
+add wave -noupdate /system_tb/DUT/CPU/CM/DCACHE/state
+add wave -noupdate /system_tb/DUT/CPU/CM/DCACHE/nxt_state
+add wave -noupdate -divider CIF
+add wave -noupdate /system_tb/DUT/CPU/CM/cif/iwait
+add wave -noupdate /system_tb/DUT/CPU/CM/cif/dwait
+add wave -noupdate /system_tb/DUT/CPU/CM/cif/iREN
+add wave -noupdate /system_tb/DUT/CPU/CM/cif/dREN
+add wave -noupdate /system_tb/DUT/CPU/CM/cif/dWEN
+add wave -noupdate /system_tb/DUT/CPU/CM/cif/iload
+add wave -noupdate /system_tb/DUT/CPU/CM/cif/dload
+add wave -noupdate /system_tb/DUT/CPU/CM/cif/dstore
+add wave -noupdate /system_tb/DUT/CPU/CM/cif/iaddr
+add wave -noupdate /system_tb/DUT/CPU/CM/cif/daddr
+add wave -noupdate /system_tb/DUT/CPU/CM/cif/ccwait
+add wave -noupdate /system_tb/DUT/CPU/CM/cif/ccinv
+add wave -noupdate /system_tb/DUT/CPU/CM/cif/ccwrite
+add wave -noupdate /system_tb/DUT/CPU/CM/cif/cctrans
+add wave -noupdate /system_tb/DUT/CPU/CM/cif/ccsnoopaddr
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {595397 ps} 0}
-quietly wave cursor active 0
+WaveRestoreCursors {{Cursor 1} {461757 ps} 0}
+quietly wave cursor active 1
 configure wave -namecolwidth 303
 configure wave -valuecolwidth 100
 configure wave -justifyvalue left
@@ -163,4 +201,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {0 ps} {627638 ps}
+WaveRestoreZoom {223512 ps} {409925 ps}

@@ -97,6 +97,7 @@ module ex_mem (
       next_ex_mem_out.dREN  = exmemif.ex_mem_in.dREN;*/
       next_ex_mem_out = exmemif.ex_mem_in;
     end
+    //next_ex_mem_out.halt = exmemif.ex_mem_in.halt; ///
     exmemif.stallDmem = exmemif.ex_mem_out.dWEN | exmemif.ex_mem_out.dREN;
   end
 endmodule
