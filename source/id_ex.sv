@@ -28,6 +28,7 @@ always_ff @ (posedge CLK, negedge nRST) begin
         idex.out.addr <= '0;
         idex.out.halt <= 0;
         idex.out.jal <= 0;
+        idex.out.pc <= '0;
         idex.out.imm <= '0;
         idex.out.aluop <= ALU_SLL;
         idex.out.instr <= '0;
@@ -44,13 +45,14 @@ always_ff @ (posedge CLK, negedge nRST) begin
     end
 end
 always_comb begin
-    if(idex.flushed /*&& idex.ihit) */|| idex.stall) begin
+    if(idex.flushed /*&& idex.ihit) */ || idex.stall) begin
         next_idex_out.SignedExt = '0;
         next_idex_out.ZeroExt = '0;
         next_idex_out.BrAddr = '0;
         next_idex_out.pcsrc = '0;
         next_idex_out.alusrc = '0;
         next_idex_out.npc = '0;
+        next_idex_out.pc = '0;
         next_idex_out.rdat1 = '0;
         next_idex_out.rdat2 = '0;
         next_idex_out.jal = 0;
@@ -72,7 +74,7 @@ always_comb begin
         next_idex_out.RegDst = 0;
         next_idex_out.shamt = '0;
     end
-    else next_idex_out = idex.in;
+    else/* if(!idex.stall)*/ next_idex_out = idex.in;
 end
 
 endmodule

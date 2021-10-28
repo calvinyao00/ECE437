@@ -112,7 +112,7 @@ module datapath (
   assign idex.in.aluop = cuif.aluop;
   assign idex.in.func = cuif.func;
   assign idex.in.addr = cuif.addr;
-  assign idex.in.halt = halt;
+  assign idex.in.halt = cuif.halt;
   //assign idex.in.flagZero Error (10161): Verilog HDL error at BPT.sv(28): object "btbif" is not declared File: /home/ecegrid/a/mg215/ece437/processors/source/BPT.sv Line:= cuif.flagZero;
   assign idex.in.imm = cuif.imm;
   assign idex.in.instr = ifid.instr;
@@ -292,33 +292,43 @@ module datapath (
   end*/
   assign pcif.newpc = exmemif.ex_mem_out.pcsrc  == 0 ? pcif.npc : newPc;
   
-  assign pcif.pcEN = (dpif.ihit & !huif.ifid_stall) || (exmemif.ex_mem_out.pcsrc != '0);
+  //assign pcif.pcEN = (dpif.ihit & !huif.ifid_stall) || (exmemif.ex_mem_out.pcsrc != '0);
   //Resolving branches ang jumps in EX stage, updating PC in  stage
   always_comb begin
     newPc = exmemif.ex_mem_out.npc; // pc+4
     branch_taken = 1;
+    //pcif.pcEN = (opcode == LW || opcode == SW) ? dpif.dhit : (dpif.ihit & !huif.ifid_stall);
+    pcif.pcEN = dpif.ihit & !huif.ifid_stall;
     casez(exmemif.ex_mem_out.pcsrc) 
       //3'd0: newPc = pcif.npc;
       3'd2: begin
         newPc = exmemif.ex_mem_out.rdat1;
+        pcif.pcEN = (dpif.ihit & !huif.ifid_stall) || (exmemif.ex_mem_out.pcsrc != '0);
       end
       3'd3: begin
         newPc = exmemif.ex_mem_out.JumpAddr;
+        pcif.pcEN = (dpif.ihit & !huif.ifid_stall) || (exmemif.ex_mem_out.pcsrc != '0);
       end
       3'd4: begin
-        if(~exmemif.ex_mem_out.flagZero) newPc = exmemif.ex_mem_out.pcPlusFour + exmemif.ex_mem_out.BrAddr;
+        if(~exmemif.ex_mem_out.flagZero) begin
+          newPc = exmemif.ex_mem_out.pcPlusFour + exmemif.ex_mem_out.BrAddr;
+          pcif.pcEN = (dpif.ihit & !huif.ifid_stall) || (exmemif.ex_mem_out.pcsrc != '0);
+        end
         //else newPc = idex.out.npc;
         else begin
           branch_taken = 0;
-          newPc =  exmemif.ex_mem_out.npc;
+          newPc = pcif.npc;
         end
       end
       3'd5: begin
-        if(exmemif.ex_mem_out.flagZero) newPc = exmemif.ex_mem_out.pcPlusFour + exmemif.ex_mem_out.BrAddr;
+        if(exmemif.ex_mem_out.flagZero) begin
+          newPc = exmemif.ex_mem_out.pcPlusFour + exmemif.ex_mem_out.BrAddr;
+          pcif.pcEN = (dpif.ihit & !huif.ifid_stall) || (exmemif.ex_mem_out.pcsrc != '0);
+        end
         //else newPc = idex.out.npc;
         else begin
           branch_taken = 0;
-          newPc =  exmemif.ex_mem_out.npc;
+          newPc = pcif.npc;
         end
       end
     endcase
@@ -329,8 +339,8 @@ module datapath (
     else halt <= nxt_halt;//memwbif.mem_wb_out.halt | halt;
   end
   always_comb begin
-    nxt_halt = cuif.halt | halt; //memwbif.mem_wb_out.halt | halt;
+    nxt_halt = memwbif.mem_wb_out.halt | halt;
   end
 
-  assign dpif.halt = memwbif.mem_wb_out.halt;
+  assign dpif.halt = halt;
 endmodule

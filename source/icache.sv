@@ -13,19 +13,23 @@ module icache(
 );
     // import types
     import cpu_types_pkg::*;
+    typedef enum bit {HIT, WAIT}stateType;
     logic ihit, cache_hit;
     icachef_t addr;
     icache_frame [15:0]icaches;
     icache_frame [15:0]next_icaches;
-    
+    stateType state;
+    stateType nxt_state;
     assign addr = icachef_t'(dcif.imemaddr);
     //assign 
     always_ff @ (posedge CLK, negedge nRST) begin
         if(!nRST) begin
             icaches <= '0;
+            state <= WAIT;
         end
         else begin
             icaches <= next_icaches;
+            state <= nxt_state;
         end 
     end
     assign ihit = (cif.iREN) ? ~cif.iwait : 0;
@@ -37,12 +41,18 @@ module icache(
         cif.iREN = 0;
         cif.iaddr = 0;
         dcif.imemload= 0;
+        nxt_state = WAIT;
+        case (state)
+            HIT: nxt_state = WAIT;
+            WAIT: nxt_state = (cache_hit | ihit) ?  HIT: WAIT;
+        endcase
         if (ihit) begin    
             next_icaches[addr.idx].data = cif.iload;
             next_icaches[addr.idx].valid = 1;
             next_icaches[addr.idx].tag = addr.tag;
+            nxt_state = HIT;
         end
-
+        
         if(dcif.halt) begin
             //halted
             dcif.ihit = 0;
@@ -53,6 +63,7 @@ module icache(
             //dcif.ihit = (ihit || cache_hit);
             //Hit
             if (icaches[addr.idx].tag == addr.tag && icaches[addr.idx].valid) begin
+                cache_hit = 1;
                 dcif.ihit = 1;
                 dcif.imemload = icaches[addr.idx].data;
             end

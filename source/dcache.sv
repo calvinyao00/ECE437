@@ -118,11 +118,13 @@ always_comb begin
                     nxt_recent[addr.idx] = 0; // old
                 end
                 else begin
-                    dcif.dhit = 1;
+                    /*dcif.dhit = 1;
                     nxt_dcaches[addr.idx][recent[addr.idx]].data[addr.blkoff] = dcif.dmemstore;
                     nxt_dcaches[addr.idx][recent[addr.idx]].tag = addr.tag;
                     nxt_dcaches[addr.idx][recent[addr.idx]].valid = 1;
-                    nxt_dcaches[addr.idx][recent[addr.idx]].dirty = 1;
+                    nxt_dcaches[addr.idx][recent[addr.idx]].dirty = 1;*/
+                    miss = 1;
+					nxt_hit_counter = hit_counter - 1;
                 end
             end
             else if(dcif.dmemREN) begin

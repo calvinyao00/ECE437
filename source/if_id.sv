@@ -29,7 +29,7 @@ always_comb begin
     nxt_instr = ifid.instr;
     nxt_pc = ifid.pc;
     nxt_pcout = ifid.pcout;
-    if((ifid.flushed && ifid.ihit)) begin
+    if((ifid.flushed)) begin
         nxt_instr = '0;
         nxt_pc = '0;
         nxt_pcout = '0;
