@@ -8,7 +8,7 @@
 
 module icache(
   input logic CLK, nRST,
-  datapath_cache_if.cache dcif,
+  datapath_cache_if dcif,
   caches_if.icache cif
 );
     // import types
@@ -25,11 +25,11 @@ module icache(
     always_ff @ (posedge CLK, negedge nRST) begin
         if(!nRST) begin
             icaches <= '0;
-            state <= WAIT;
+            //state <= WAIT;
         end
         else begin
             icaches <= next_icaches;
-            state <= nxt_state;
+            //state <= nxt_state;
         end 
     end
     assign ihit = (cif.iREN) ? ~cif.iwait : 0;
@@ -42,7 +42,7 @@ module icache(
         cif.iaddr = 0;
         dcif.imemload= 0;
         nxt_state = WAIT;
-        case (state)
+        /*case (state)
             HIT: nxt_state = WAIT;
             WAIT: nxt_state = (cache_hit | ihit) ?  HIT: WAIT;
         endcase
@@ -51,15 +51,15 @@ module icache(
             next_icaches[addr.idx].valid = 1;
             next_icaches[addr.idx].tag = addr.tag;
             nxt_state = HIT;
-        end
+        end*/
         
         if(dcif.halt) begin
             //halted
             dcif.ihit = 0;
-		    dcif.imemload = 0;
+		    //dcif.imemload = 0;
             next_icaches = 0;
         end
-        else if(dcif.imemREN && !dcif.dmemREN && !dcif.dmemWEN) begin
+        if(dcif.imemREN && !dcif.dmemREN && !dcif.dmemWEN) begin
             //dcif.ihit = (ihit || cache_hit);
             //Hit
             if (icaches[addr.idx].tag == addr.tag && icaches[addr.idx].valid) begin
@@ -77,7 +77,7 @@ module icache(
         end
         else begin
 		    dcif.ihit = 0;
-		    dcif.imemload = 0;
+		    //dcif.imemload = 0;
         end
     end
     

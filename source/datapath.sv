@@ -43,8 +43,8 @@ module datapath (
   mem_wb_if memwbif();
   hazard_unit_if huif();
   forward_unit_if fuif();
-  BTB_if btbif();
-  BPT_if bptif();
+  //BTB_if btbif();
+  //BPT_if bptif();
   alu ALU(nRST, aif);
   control_unit CONTROL(cuif);
   register_file REGISTER(CLK, nRST, rfif);
@@ -55,8 +55,8 @@ module datapath (
   mem_wb MEMWB(CLK, nRST, memwbif);
   hazard_unit HAZARD(huif);
   forward_unit FORWARD(fuif);
-  BTB btb(CLK, nRST, btbif);
-  BPT bpt(CLK, nRST, bptif);  
+  //BTB btb(CLK, nRST, btbif);
+  //BPT bpt(CLK, nRST, bptif);  
   word_t JumpAddr;
   logic halt, nxt_halt;
   word_t  newPc;
@@ -74,10 +74,10 @@ module datapath (
   //assign npc = PC + 4;
 
   assign JumpAddr = {idex.out.npc[31:28], idex.out.instr[25:0], 2'b00};
-  assign btbif.WEN = (cuif.opcode == BNE | cuif.opcode == BEQ);
-  assign btbif.branch_index = ifid.PC[12:2];
-  assign btbif.wdat = cuif.BranchAddr;
-  assign btbif.lookup_index = pcif.PC[12:2];
+  //assign btbif.WEN = (cuif.opcode == BNE | cuif.opcode == BEQ);
+  //assign btbif.branch_index = ifid.PC[12:2];
+  //assign btbif.wdat = cuif.BranchAddr;
+  //assign btbif.lookup_index = pcif.PC[12:2];
 
 
   // IF/ID latch
@@ -88,10 +88,10 @@ module datapath (
   assign ifid.flushed = huif.flushed;
   assign ifid.stall = huif.ifid_stall;
 
-  assign bptif.WEN = (exmemif.ex_mem_out.opcode == BNE | exmemif.ex_mem_out.opcode == BEQ);
-  assign bptif.branch_index = exmemif.ex_mem_out.pc[12:2];
-  assign bptif.result = 0;
-  assign bptif.lookup_index = pcif.PC[12:2];
+  //assign bptif.WEN = (exmemif.ex_mem_out.opcode == BNE | exmemif.ex_mem_out.opcode == BEQ);
+  //assign bptif.branch_index = exmemif.ex_mem_out.pc[12:2];
+  //assign bptif.result = 0;
+  //assign bptif.lookup_index = pcif.PC[12:2];
   // ID/EX latch
   assign idex.ihit = dpif.ihit;
   assign idex.in.SignedExt = cuif.SignedExt;
@@ -191,6 +191,7 @@ module datapath (
   assign huif.rt = cuif.rt;
   assign huif.exmem_rd = exmemif.ex_mem_out.rd;
   assign huif.idex_rd = idex.out.rd;
+  assign huif.RegDst = cuif.RegDst;
   assign huif.exmem_rt = exmemif.ex_mem_out.rt;
   assign huif.idex_rt = idex.out.rt;
   assign huif.idex_opcode = idex.out.opcode;
@@ -339,7 +340,7 @@ module datapath (
     else halt <= nxt_halt;//memwbif.mem_wb_out.halt | halt;
   end
   always_comb begin
-    nxt_halt = memwbif.mem_wb_out.halt | halt;
+    nxt_halt = exmemif.ex_mem_out.halt | halt;
   end
 
   assign dpif.halt = halt;

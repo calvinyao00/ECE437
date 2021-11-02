@@ -1,59 +1,93 @@
-/*
-  Eric Villasenor
-  evillase@gmail.com
+// interfaces
+`include "system_if.vh"
+`include "datapath_cache_if.vh"
+`include "caches_if.vh"
 
-  this block is the coherence protocol
-  and artibtration for ram
-*/
-
-// interface include
-`include "cache_control_if.vh"
-
-// memory types
+// cpu types
 `include "cpu_types_pkg.vh"
 
-module memory_control 
-import cpu_types_pkg::*;
-(
-  input CLK, nRST,
-  cache_control_if.cc ccif
+module icache(
+  input logic CLK, nRST,
+  datapath_cache_if dcif,
+  caches_if.icache cif
 );
-  // type import
-  import cpu_types_pkg::*;
-
-  // number of cpus for cc
-  parameter CPUS = 2;
-
-  always_comb begin
-    ccif.dwait = (ccif.dREN | ccif.dWEN) ? (ccif.ramstate == BUSY || ccif.ramstate == ERROR) : 0;
-    ccif.iload = (!ccif.dREN & !ccif.dWEN) ? ((ccif.ramstate == ACCESS) ? ccif.ramload : 0) : '0;
-    ccif.dload = ccif.dREN ? ccif.ramload : '0;
-    ccif.ramstore = ccif.dWEN ? ccif.dstore : '0;
-    ccif.ramaddr = (ccif.dREN | ccif.dWEN) ? ccif.daddr : (ccif.iREN ? ccif.iaddr : '0);
-    ccif.ramWEN = ccif.dWEN;
-    ccif.ramREN = ccif.dREN ? ccif.dREN : (!ccif.dWEN && ccif.iREN);
-    ccif.ccwait = 0;
-    ccif.ccinv = 0;
-    ccif.ccsnoopaddr = '0;
-    //if (ccif.dREN) begin
-      //ccif.ramREN = ccif.dREN;
-      //ccif.ramaddr = ccif.daddr;
-      //ccif.dwait = (ccif.ramstate == BUSY || ccif.ramstate == ERROR);
-      //ccif.dload = ccif.ramload;
-    //end
-    //else if(ccif.dWEN) begin
-      //ccif.ramWEN = ccif.dWEN;
-      //ccif.ramaddr = ccif.daddr;
-      //ccif.dwait = (ccif.ramstate == BUSY || ccif.ramstate == ERROR);
-      //ccif.ramstore = ccif.dstore;
-    //end
-   // else if (ccif.iREN) begin
-      //ccif.ramREN = ccif.iREN;
-      //ccif.ramaddr = ccif.iaddr;
-      //ccif.iload = (ccif.ramstate == ACCESS) ? ccif.ramload : 0;
-    //end
-
-    ccif.iwait = (ccif.ramstate == ACCESS) ? !(!ccif.dREN && !ccif.dWEN && ccif.iREN) : 1;
-  end
-
+    // import types
+    import cpu_types_pkg::*;
+    typedef enum bit {IDLE, MISS}stateType;
+    logic ihit, cache_hit;
+    icachef_t addr;
+    icache_frame [15:0]icaches;
+    icache_frame [15:0]next_icaches;
+    icache_frame hit_frame;
+    stateType state;
+    stateType nxt_state;
+    assign addr = icachef_t'(dcif.imemaddr);
+    assign hit_frame = icaches[addr.idx];
+    //assign 
+    always_ff @ (posedge CLK, negedge nRST) begin
+        if(!nRST) begin
+            icaches <= '0;
+            //state <= IDLE;
+        end
+        else begin
+            icaches <= next_icaches;
+            //state <= nxt_state;
+        end 
+    end
+    assign ihit = (cif.iREN) ? ~cif.iwait : 0;
+    //assign cache_hit = icaches[addr.idx].tag == addr.tag && icaches[addr.idx].valid;
+    always_comb begin
+        cache_hit = 0;
+        next_icaches = icaches;
+        //dcif.ihit = 0;
+        cif.iREN = 0;
+        //cif.iaddr = 0;
+        dcif.imemload= 0;
+        cif.iaddr = dcif.imemaddr;
+        nxt_state = WAIT;
+        case (state)
+            IDLE: begin
+	        if (dcif.imemREN) begin
+			nxt_state = (hit_frame.tag != addr.tag && !hit_frame.valid) ? MISS : IDLE;
+                else 
+                	nxt_state = IDLE;
+            end
+            MISS: begin
+                nxt_state = ihit ?  IDLE: MISS;
+            end
+        endcase
+	
+        if (ihit) begin    
+            next_icaches[addr.idx].data = cif.iload;
+            next_icaches[addr.idx].valid = 1;
+            next_icaches[addr.idx].tag = addr.tag;
+            nxt_state = HIT;
+        end
+        
+        if(dcif.halt) begin
+            //halted
+            dcif.ihit = 0;
+            //dcif.imemload = 0;
+            next_icaches = 0;
+        end
+        else if(dcif.imemREN && hit_frame.tag == addr.tag && hit_frame.valid) begin
+            //dcif.ihit = (ihit || cache_hit);
+            //Hit
+            //if (icaches[addr.idx].tag == addr.tag && hit_frame.valid) begin
+                cache_hit = 1;
+                dcif.ihit = 1;
+                dcif.imemload = hit_frame.data;
+        end
+        else if (dcif.imemREN)begin
+                dcif.ihit = ihit;
+                dcif.imemload = cif.iload;
+                cif.iREN = 1;
+                
+        end
+        else begin
+		    dcif.ihit = 0;
+		    //dcif.imemload = 0;
+        end
+    end
+    
 endmodule

@@ -16,16 +16,20 @@ always_comb begin
     huif.ifid_stall = 0;
     huif.idex_stall = 0;
     
-    if(!huif.flushed && ((huif.idex_opcode == LW)) && ~huif.dhit) begin
-        //if(((huif.rs == huif.exmem_write/*huif.idex_rt*/) || (huif.rt == huif.exmem_write/*huif.idex_rt*/))) begin
-            huif.ifid_stall = 1;
-            huif.idex_stall = 1;
-            huif.exmem_stall = 1;
+    if(!huif.flushed && ((huif.exmem_opcode == LW)) && ~huif.dhit) begin
+        //if(huif.idex_opcode != LW) begin
+            //if(((huif.rs == huif.exmem_write/*huif.idex_rt*/) || (huif.rt == huif.exmem_write/*huif.idex_rt*/))) begin
+                huif.ifid_stall = 1;
+                huif.idex_stall = 1;
+                huif.memwb_stall = 1;
+                huif.exmem_stall = 1;
+            //end
         //end
     end
-    if((huif.idex_opcode == SW) && !huif.flushed && ~huif.dhit) begin
+    if((huif.exmem_opcode == SW) && !huif.flushed && ~huif.dhit) begin
         huif.ifid_stall = 1;
         huif.idex_stall = 1;
+        huif.memwb_stall = 1;
         huif.exmem_stall = 1;
     end
 

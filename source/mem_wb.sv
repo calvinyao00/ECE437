@@ -23,7 +23,7 @@ module mem_wb (
 	  	end
   end
   always_comb begin : CONTROL_LOGIC
-    if (memwbif.EN) begin
+    if (memwbif.EN && !memwbif.stall) begin
       next_mem_wb_out = memwbif.mem_wb_in;
     end
     else

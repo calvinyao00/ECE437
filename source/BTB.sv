@@ -5,8 +5,8 @@ module BTB (
     input logic nRST,
     BTB_if.btb btbif
 );
-    logic [2047:0] [31:0] target_buffer;
-    logic [2047:0] [31:0] next_target_buffer;
+    logic [255:0] [31:0] target_buffer;
+    logic [255:0] [31:0] next_target_buffer;
 
     always_ff @ (posedge CLK, negedge nRST) begin
         if(!nRST) begin

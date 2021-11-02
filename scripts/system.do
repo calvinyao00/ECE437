@@ -12,6 +12,16 @@ add wave -noupdate /system_tb/DUT/CPU/DP/pcif/npc
 add wave -noupdate /system_tb/DUT/CPU/DP/pcif/newpc
 add wave -noupdate /system_tb/DUT/CPU/DP/pcif/PC
 add wave -noupdate /system_tb/DUT/CPU/DP/pcif/pcEN
+add wave -noupdate -divider {if id}
+add wave -noupdate -color {Dark Orchid} -itemcolor {Dark Orchid} /system_tb/DUT/CPU/DP/ifid/imemload
+add wave -noupdate -color {Dark Orchid} -itemcolor {Dark Orchid} /system_tb/DUT/CPU/DP/ifid/npc
+add wave -noupdate -color {Dark Orchid} -itemcolor {Dark Orchid} /system_tb/DUT/CPU/DP/ifid/instr
+add wave -noupdate -color {Dark Orchid} -itemcolor {Dark Orchid} /system_tb/DUT/CPU/DP/ifid/pc
+add wave -noupdate -color {Dark Orchid} -itemcolor {Dark Orchid} /system_tb/DUT/CPU/DP/ifid/pcout
+add wave -noupdate -color {Dark Orchid} -itemcolor {Dark Orchid} /system_tb/DUT/CPU/DP/ifid/PC
+add wave -noupdate -color {Dark Orchid} -itemcolor {Dark Orchid} /system_tb/DUT/CPU/DP/ifid/stall
+add wave -noupdate -color {Dark Orchid} -itemcolor {Dark Orchid} /system_tb/DUT/CPU/DP/ifid/ihit
+add wave -noupdate -color {Dark Orchid} -itemcolor {Dark Orchid} /system_tb/DUT/CPU/DP/ifid/flushed
 add wave -noupdate -divider icache
 add wave -noupdate /system_tb/DUT/CPU/CM/ICACHE/ihit
 add wave -noupdate /system_tb/DUT/CPU/CM/ICACHE/cache_hit
@@ -52,7 +62,7 @@ add wave -noupdate /system_tb/DUT/CPU/DP/cuif/PCsrc
 add wave -noupdate /system_tb/DUT/CPU/DP/cuif/shamt
 add wave -noupdate -divider {id ex}
 add wave -noupdate -color Cyan -itemcolor Cyan -childformat {{/system_tb/DUT/CPU/DP/idex/in.rt -radix hexadecimal}} -subitemconfig {/system_tb/DUT/CPU/DP/idex/in.SignedExt {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.ZeroExt {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.BrAddr {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.pcsrc {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.alusrc {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.npc {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.pc {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.RegSrc {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.RegDst {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.rdat1 {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.rdat2 {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.rd {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.rs {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.rt {-color Cyan -height 16 -itemcolor Cyan -radix hexadecimal} /system_tb/DUT/CPU/DP/idex/in.opcode {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.aluop {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.func {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.addr {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.jal {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.halt {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.imm {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.instr {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.dREN {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.dWEN {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.RegWrite {-color Cyan -height 16 -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/in.shamt {-color Cyan -height 16 -itemcolor Cyan}} /system_tb/DUT/CPU/DP/idex/in
-add wave -noupdate -color Cyan -itemcolor Cyan /system_tb/DUT/CPU/DP/idex/out
+add wave -noupdate -color Cyan -itemcolor Cyan -expand -subitemconfig {/system_tb/DUT/CPU/DP/idex/out.SignedExt {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.ZeroExt {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.BrAddr {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.pcsrc {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.alusrc {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.npc {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.pc {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.RegSrc {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.RegDst {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.rdat1 {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.rdat2 {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.rd {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.rs {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.rt {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.opcode {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.aluop {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.func {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.addr {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.jal {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.halt {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.imm {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.instr {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.dREN {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.dWEN {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.RegWrite {-color Cyan -itemcolor Cyan} /system_tb/DUT/CPU/DP/idex/out.shamt {-color Cyan -itemcolor Cyan}} /system_tb/DUT/CPU/DP/idex/out
 add wave -noupdate /system_tb/DUT/CPU/DP/idex/stall
 add wave -noupdate -color Cyan -itemcolor Cyan /system_tb/DUT/CPU/DP/idex/ihit
 add wave -noupdate -color Cyan -itemcolor Cyan /system_tb/DUT/CPU/DP/idex/stall
@@ -83,16 +93,6 @@ add wave -noupdate /system_tb/DUT/CPU/DP/rfif/rsel2
 add wave -noupdate /system_tb/DUT/CPU/DP/rfif/wdat
 add wave -noupdate /system_tb/DUT/CPU/DP/rfif/rdat1
 add wave -noupdate /system_tb/DUT/CPU/DP/rfif/rdat2
-add wave -noupdate -divider {if id}
-add wave -noupdate -color {Dark Orchid} -itemcolor {Dark Orchid} /system_tb/DUT/CPU/DP/ifid/imemload
-add wave -noupdate -color {Dark Orchid} -itemcolor {Dark Orchid} /system_tb/DUT/CPU/DP/ifid/npc
-add wave -noupdate -color {Dark Orchid} -itemcolor {Dark Orchid} /system_tb/DUT/CPU/DP/ifid/instr
-add wave -noupdate -color {Dark Orchid} -itemcolor {Dark Orchid} /system_tb/DUT/CPU/DP/ifid/pc
-add wave -noupdate -color {Dark Orchid} -itemcolor {Dark Orchid} /system_tb/DUT/CPU/DP/ifid/pcout
-add wave -noupdate -color {Dark Orchid} -itemcolor {Dark Orchid} /system_tb/DUT/CPU/DP/ifid/PC
-add wave -noupdate -color {Dark Orchid} -itemcolor {Dark Orchid} /system_tb/DUT/CPU/DP/ifid/stall
-add wave -noupdate -color {Dark Orchid} -itemcolor {Dark Orchid} /system_tb/DUT/CPU/DP/ifid/ihit
-add wave -noupdate -color {Dark Orchid} -itemcolor {Dark Orchid} /system_tb/DUT/CPU/DP/ifid/flushed
 add wave -noupdate -divider {ex mem}
 add wave -noupdate -color Yellow -itemcolor Yellow /system_tb/DUT/CPU/DP/exmemif/EN
 add wave -noupdate -color Yellow -itemcolor Yellow /system_tb/DUT/CPU/DP/exmemif/ihit
@@ -100,8 +100,8 @@ add wave -noupdate -color Yellow -itemcolor Yellow /system_tb/DUT/CPU/DP/exmemif
 add wave -noupdate -color Yellow -itemcolor Yellow /system_tb/DUT/CPU/DP/exmemif/flushed
 add wave -noupdate -color Yellow -itemcolor Yellow /system_tb/DUT/CPU/DP/exmemif/stallDmem
 add wave -noupdate -color Yellow -itemcolor Yellow /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.pc
-add wave -noupdate -color Yellow -itemcolor Yellow /system_tb/DUT/CPU/DP/exmemif/ex_mem_in
-add wave -noupdate -color Yellow -itemcolor Yellow /system_tb/DUT/CPU/DP/exmemif/ex_mem_out
+add wave -noupdate -color Yellow -itemcolor Yellow -subitemconfig {/system_tb/DUT/CPU/DP/exmemif/ex_mem_in.pc {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.aluOut {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.dmemaddr {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.BrAddr {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.imemload {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.dmemstore {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.pcPlusFour {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.rdat1 {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.JumpAddr {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.rd {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.rt {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.rs {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.imm16 {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.jal {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.func {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.shamt {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.RegDst {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.opcode {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.RegWrite {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.RegSrc {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.dWEN {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.dREN {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.halt {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.flagZero {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.npc {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in.pcsrc {-color Yellow -itemcolor Yellow}} /system_tb/DUT/CPU/DP/exmemif/ex_mem_in
+add wave -noupdate -color Yellow -itemcolor Yellow -expand -subitemconfig {/system_tb/DUT/CPU/DP/exmemif/ex_mem_out.pc {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.aluOut {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.dmemaddr {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.BrAddr {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.imemload {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.dmemstore {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.pcPlusFour {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.rdat1 {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.JumpAddr {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.rd {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.rt {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.rs {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.imm16 {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.jal {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.func {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.shamt {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.RegDst {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.opcode {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.RegWrite {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.RegSrc {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.dWEN {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.dREN {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.halt {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.flagZero {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.npc {-color Yellow -itemcolor Yellow} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out.pcsrc {-color Yellow -itemcolor Yellow}} /system_tb/DUT/CPU/DP/exmemif/ex_mem_out
 add wave -noupdate -divider DCACHE
 add wave -noupdate /system_tb/DUT/CPU/CM/DCACHE/CLK
 add wave -noupdate /system_tb/DUT/CPU/CM/DCACHE/nRST
@@ -186,7 +186,7 @@ add wave -noupdate /system_tb/DUT/CPU/CM/cif/daddr
 add wave -noupdate /system_tb/DUT/CPU/CM/cif/ccwait
 add wave -noupdate /system_tb/DUT/CPU/CM/cif/ccinv
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {620658 ps} 0}
+WaveRestoreCursors {{Cursor 1} {399929 ps} 0}
 quietly wave cursor active 1
 configure wave -namecolwidth 303
 configure wave -valuecolwidth 100
@@ -202,4 +202,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {502800 ps} {921800 ps}
+WaveRestoreZoom {125700 ps} {544700 ps}

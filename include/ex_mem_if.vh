@@ -16,14 +16,14 @@ interface ex_mem_if;
 
   import pipe_types_pkg::*;
   
-  logic     EN, ihit, dhit, flushed, stallDmem, stall;
+  logic     ihit, dhit, flushed, stallDmem, stall;//EN, 
   ex_mem_t  ex_mem_in;
   ex_mem_t  ex_mem_out;
   //word_t    dmemstore, dmemREN, dmemREN, dmemaddr, aluOut_in, dmemstore_in, dmemstore_out, aluOut_out, rdat2_in, rdat2_out;
 
   // EX/MEM reg ports
   modport ex_mem (
-    input   EN, ihit, dhit,flushed, ex_mem_in, stall,
+    input   ihit, dhit,flushed, ex_mem_in, stall,//EN, 
     output  stallDmem, ex_mem_out
   );
 endinterface
