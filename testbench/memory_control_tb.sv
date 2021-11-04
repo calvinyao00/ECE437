@@ -102,28 +102,31 @@ program test (input logic CLK, output logic nRST);
     #(PERIOD * 5)
   
     // *******************************************
-    // Test Case 2: Read Instr from RAM
+    // Test Case 2: cache0 and cache1 both Read Instr from RAM
     // *******************************************
     test_case_num += 1;
-    test_case = "Read Instr";
+    test_case = "cache0 and cache1 both Read Instr";
     reset_bus();
-    read_instr(32'h00000020);
-    #(PERIOD * 5)
+    read_instr(0, 32'h00000020);
+    cif.ccwrite = '0;
+    read_instr(1, 32'h00000020);
+    cif.ccwrite = '0;
+    #(PERIOD * 10)
 
     // *******************************************
     // Test Case 3: Read data from RAM
     // *******************************************
     test_case_num += 1;
-    test_case = "Read Data";
+    test_case = "cache0 Read Data";
     reset_bus();
-    read_data(32'h00000020);
-    #(PERIOD * 5)
+    read_data(0, 32'h00000020);
+    #(PERIOD * 10)
 
-    // *******************************************
+/*     // *******************************************
     // Test Case 4: Write data to memory
     // *******************************************
     test_case_num += 1;
-    test_case = "Write Data";
+    test_case = "cache0 Write Data, cache 1 causes write back";
     reset_bus();
     write_data(32'hAAAABBBB, 32'h00000020);
     #(PERIOD * 5)
@@ -147,7 +150,7 @@ program test (input logic CLK, output logic nRST);
     reset_bus();
     read_instr(32'h00000020);
     write_data(32'hAAAABBBB, 32'h00000020);
-    #(PERIOD * 5)
+    #(PERIOD * 5) */
 
     // *******************************************
     // Test Case 7: Dump memory content
@@ -204,38 +207,43 @@ program test (input logic CLK, output logic nRST);
 
   task reset_bus;
     cif.iaddr = '0;
-    cif.iREN = 0;
-    cif.dREN = 0;
-    cif.dWEN = 0;
+    cif.iREN = '0;
+    cif.dREN = '0;
+    cif.dWEN = '0;
     cif.daddr = '0;
     cif.dstore = '0;
+    cif.cctrans = '0;
+    cif.ccwrite = '0;
   endtask
 
   task read_instr;
+  input logic cache_number;
   input word_t iaddr;
   begin
-    cif.iaddr = iaddr;
-    cif.iREN = 1;
+    cif.iaddr[cache_number] = iaddr;
+    cif.iREN[cache_number] = 1;
   end
   endtask
 
   task read_data;
+  input logic cache_number;
   input word_t daddr;
   begin
-    cif.daddr = daddr;
-    cif.dREN = 1;
-    cif.dWEN = 0;
+    cif.daddr[cache_number] = daddr;
+    cif.dREN[cache_number] = 1;
+    cif.dWEN[cache_number] = 0;
   end
   endtask
 
   task write_data;
+  input logic cache_number;
   input word_t data;
   input word_t daddr;
   begin
-    cif.dREN = 0;
-    cif.dstore = data;
-    cif.daddr = daddr;
-    cif.dWEN = 1;
+    cif.dREN[cache_number] = 0;
+    cif.dstore[cache_number] = data;
+    cif.daddr[cache_number] = daddr;
+    cif.dWEN[cache_number] = 1;
   end
   endtask
 

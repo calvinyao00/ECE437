@@ -1,3 +1,11 @@
+/*
+  Eric Villasenor
+  evillase@gmail.com
+
+  this block is the coherence protocol
+  and artibtration for ram
+*/
+
 // interface include
 `include "cache_control_if.vh"
 
@@ -10,9 +18,9 @@ import cpu_types_pkg::*;
   input CLK, nRST,
   cache_control_if.cc ccif
 );
-  // type import
-  import cpu_types_pkg::*;
-  typedef enum logic[3:0] {  
+import cpu_types_pkg::*;
+
+typedef enum logic[3:0] {  
     IDLE, ARB, BusRd, BusRdx, BusWB1, BusWB2, MEM1, MEM2, FIN, IARB, IFETCH
 } bstate_t;
 
@@ -50,19 +58,19 @@ always_comb begin
     nxt_irequestor = irequestor;
     casez(state)
         IDLE: begin
-            if(ccif.dREN[dtestbit] | ccif.dWEN[dtestbit]) begin
+            if(dREN[dtestbit] | dWEN[dtestbit]) begin
                 nxt_state = ARB;
                 nxt_drequestor = dtestbit;
             end
-            else if(ccif.dREN[!dtestbit] | ccif.dWEN[!dtestbit]) begin
+            else if(dREN[!dtestbit] | dWEN[!dtestbit]) begin
                 nxt_state = ARB;
                 nxt_drequestor = !dtestbit;
             end
-            else if(ccif.iREN[itestbit]) begin
+            else if(iREN[itestbit]) begin
                 nxt_state = IFETCH;
                 nxt_irequestor = itestbit;
             end
-            else if(ccif.iREN[!itestbit]) begin
+            else if(iREN[!itestbit]) begin
                 nxt_state = IFETCH;
                 nxt_irequestor = !itestbit;
             end
@@ -73,35 +81,35 @@ always_comb begin
         end*/
         IFETCH: begin
             nxt_itestbit = !itestbit;
-            if(ccif.ramstate == ACCESS) nxt_state = IDLE;
+            if(ramstate == ACCESS) nxt_state = IDLE;
         end
         ARB: begin
             nxt_itestbit = !itestbit;
-            if(ccif.dREN[drequestor]) nxt_state = BusRd;
-            else if(ccif.dWEN[drequestor]) nxt_state = BusRdx;
+            if(dREN[drequestor]) nxt_state = BusRd;
+            else if(dWEN[drequestor]) nxt_state = BusRdx;
         end
         BusRd: begin
-            if(ccif.ccwrite[!drequestor]) nxt_state = BusWB1;
+            if(ccwrite[!drequestor]) nxt_state = BusWB1;
             else nxt_state = MEM1;
         end
         BusRdx: begin
-            if(ccif.ccwrite[!drequestor]) nxt_state = BusWB1;
+            if(ccwrite[!drequestor]) nxt_state = BusWB1;
             else nxt_state = MEM1;
         end
         BusWB1: begin
-            if(ccif.ramstate == ACCESS) nxt_state = BusWB2;
+            if(ramstate == ACCESS) nxt_state = BusWB2;
         end
         BusWB2: begin
-            if(ccif.ramstate == ACCESS & ccif.cctrans[!drequestor]) nxt_state = MEM1;
+            if(ramstate == ACCESS & cctrans[!drequestor]) nxt_state = MEM1;
         end
         MEM1: begin
-            if(ccif.ramstate == ACCESS) nxt_state = MEM2;
+            if(ramstate == ACCESS) nxt_state = MEM2;
         end
         MEM2: begin
-            if(ccif.ramstate == ACCESS) nxt_state = FIN;
+            if(ramstate == ACCESS) nxt_state = FIN;
         end
         FIN: begin
-            if(ccif.cctrans[drequestor]) nxt_state = IDLE;
+            if(cctrans[drequestor]) nxt_state = IDLE;
         end
     endcase
 end
@@ -186,36 +194,5 @@ always_comb begin
         end
     endcase
 end
- /*  always_comb begin
-    ccif.dwait = 0;
-    ccif.iload = '0;
-    ccif.dload = '0;
-    ccif.ramstore = '0;
-    ccif.ramaddr = '0; //////'0
-    ccif.ramWEN = 0;
-    ccif.ramREN = 0;
-    ccif.ccwait = 0;
-    ccif.ccinv = 0;
-    ccif.ccsnoopaddr = '0;
-    if (ccif.dREN) begin
-      ccif.ramREN = ccif.dREN;
-      ccif.ramaddr = ccif.daddr;
-      ccif.dwait = (ccif.ramstate == BUSY || ccif.ramstate == ERROR);
-      ccif.dload = ccif.ramload;
-    end
-    else if(ccif.dWEN) begin
-      ccif.ramWEN = ccif.dWEN;
-      ccif.ramaddr = ccif.daddr;
-      ccif.dwait = (ccif.ramstate == BUSY || ccif.ramstate == ERROR);
-      ccif.ramstore = ccif.dstore;
-    end
-    else if (ccif.iREN) begin
-      ccif.ramREN = ccif.iREN;
-      ccif.ramaddr = ccif.iaddr;
-      ccif.iload = (ccif.ramstate == ACCESS) ? ccif.ramload : 0;
-    end
-
-    ccif.iwait = (ccif.ramstate == ACCESS) ? !(!ccif.dREN && !ccif.dWEN && ccif.iREN) : 1;
-  end */
 
 endmodule
