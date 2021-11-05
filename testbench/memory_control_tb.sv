@@ -107,11 +107,15 @@ program test (input logic CLK, output logic nRST);
     test_case_num += 1;
     test_case = "cache0 and cache1 both Read Instr";
     reset_bus();
+    #(PERIOD * 1)
     read_instr(0, 32'h00000020);
     cif.ccwrite = '0;
-    read_instr(1, 32'h00000020);
+    read_instr(1, 32'h00000030);
     cif.ccwrite = '0;
-    #(PERIOD * 10)
+    #(PERIOD * 6)
+    cif1.iREN = '0;
+    cif.iREN = '0;
+    #(PERIOD * 4)
 
     // *******************************************
     // Test Case 3: Read data from RAM
@@ -120,16 +124,75 @@ program test (input logic CLK, output logic nRST);
     test_case = "cache0 Read Data";
     reset_bus();
     read_data(0, 32'h00000020);
-    #(PERIOD * 10)
-
-/*     // *******************************************
-    // Test Case 4: Write data to memory
+    #(PERIOD * 6)
+    cif.cctrans = '1;
+    cif.dREN= 0;
+    #(PERIOD * 4)
+    
+    // *******************************************
+    // Test Case 4: Read data and invoke a write back
     // *******************************************
     test_case_num += 1;
-    test_case = "cache0 Write Data, cache 1 causes write back";
+    test_case = "Cache0 Read data and invoke a write back";
     reset_bus();
-    write_data(32'hAAAABBBB, 32'h00000020);
-    #(PERIOD * 5)
+    read_data(0, 32'h00000020);
+    cif1.ccwrite = '1;
+    cif1.dstore = 32'habababab;
+    #(PERIOD * 6)
+    cif1.cctrans= '1;
+    #(PERIOD * 4)
+    cif.cctrans = '1;
+    cif.dREN= 0;
+    #(PERIOD * 2)
+
+    // *******************************************
+    // Test Case 5: write data and invoke a write back
+    // *******************************************
+    test_case_num += 1;
+    test_case = "Cache0 write data and invoke a write back";
+    reset_bus();
+    write_data(0, 32'habababab, 32'h00000020);
+    cif1.ccwrite = '1;
+    cif1.dstore = 32'habababab;
+    #(PERIOD * 6)
+    cif1.cctrans= '1;
+    #(PERIOD * 4)
+    cif.cctrans = '1;
+    cif.dWEN= 0;
+    #(PERIOD * 2)
+
+    // *******************************************
+    // Test Case 6: Read data and invoke a write back
+    // *******************************************
+    test_case_num += 1;
+    test_case = "Cache1 Read data and invoke a write back";
+    reset_bus();
+    read_data(1, 32'h00000020);
+    cif.ccwrite = '1;
+    cif.dstore = 32'hbaddbadd;
+    #(PERIOD * 6)
+    cif.cctrans= '1;
+    #(PERIOD * 4)
+    cif1.cctrans = '1;
+    cif1.dREN= 0;
+    #(PERIOD * 2)
+
+        // *******************************************
+    // Test Case 7: write data and invoke a write back
+    // *******************************************
+    test_case_num += 1;
+    test_case = "Cache1 write data and invoke a write back";
+    reset_bus();
+    write_data(1, 32'habababab, 32'h00000020);
+    cif.ccwrite = '1;
+    cif.dstore = 32'habababab;
+    #(PERIOD * 6)
+    cif.cctrans= '1;
+    #(PERIOD * 4)
+    cif1.cctrans = '1;
+    cif1.dWEN= 0;
+    #(PERIOD * 2);
+/*  
 
     // *******************************************
     // Test Case 5: Conflicting instruction read and data read
@@ -145,7 +208,8 @@ program test (input logic CLK, output logic nRST);
     // Test Case 6: Confliif(ccif.iREN)
         ccif.iwait = 1;cting instruction read and data write
     // *******************************************
-    test_case_num += 1;
+    test_case_num += 1;sim:/memory_control_tb/DUT/ccif/iREN
+
     test_case = "Conflicting instruction read and data write";
     reset_bus();
     read_instr(32'h00000020);
@@ -154,12 +218,8 @@ program test (input logic CLK, output logic nRST);
 
     // *******************************************
     // Test Case 7: Dump memory content
-    // *******************************************
-    test_case_num += 1;
-    test_case = "Dump memory content";
-    reset_bus();
-    dump_memory();
-    #(PERIOD * 5);
+    // *******************************************sim:/memory_control_tb/DUT/ccif/dREN
+
 
   end
 
@@ -184,8 +244,7 @@ program test (input logic CLK, output logic nRST);
       string ihex;
 
       memory_control_tb.cif.daddr = i << 2;
-      memory_control_if(ccif.iREN)
-        ccif.iwait = 1;tb.cif.dREN = 1;
+      memory_control_tb.cif.dREN = 1;
       repeat (4) @(posedge CLK);
       if (memory_control_tb.cif.dload === 0)
         continue;
@@ -214,14 +273,29 @@ program test (input logic CLK, output logic nRST);
     cif.dstore = '0;
     cif.cctrans = '0;
     cif.ccwrite = '0;
+    cif1.iaddr = '0;
+    cif1.iREN = '0;
+    cif1.dREN = '0;
+    cif1.dWEN = '0;
+    cif1.daddr = '0;
+    cif1.dstore = '0;
+    cif1.cctrans = '0;
+    cif1.ccwrite = '0;
   endtask
 
   task read_instr;
   input logic cache_number;
   input word_t iaddr;
   begin
-    cif.iaddr[cache_number] = iaddr;
-    cif.iREN[cache_number] = 1;
+    if(!cache_number) begin
+      cif.iaddr = iaddr;
+      cif.iREN = 1;
+    end
+    else begin
+      cif1.iaddr = iaddr;
+      cif1.iREN = 1;
+    end
+    
   end
   endtask
 
@@ -229,9 +303,17 @@ program test (input logic CLK, output logic nRST);
   input logic cache_number;
   input word_t daddr;
   begin
-    cif.daddr[cache_number] = daddr;
-    cif.dREN[cache_number] = 1;
-    cif.dWEN[cache_number] = 0;
+    if(!cache_number) begin
+      cif.daddr = daddr;
+      cif.dREN = 1;
+      cif.dWEN = 0;
+    end
+    else begin
+      cif1.daddr = daddr;
+      cif1.dREN = 1;
+      cif1.dWEN = 0;
+    end
+    
   end
   endtask
 
@@ -240,12 +322,21 @@ program test (input logic CLK, output logic nRST);
   input word_t data;
   input word_t daddr;
   begin
-    cif.dREN[cache_number] = 0;
-    cif.dstore[cache_number] = data;
-    cif.daddr[cache_number] = daddr;
-    cif.dWEN[cache_number] = 1;
+    if(!cache_number) begin
+      cif.dREN = 0;
+      cif.dstore = data;
+      cif.daddr = daddr;
+      cif.dWEN = 1;
+    end
+    else begin
+      cif1.dREN = 0;
+      cif1.dstore = data;
+      cif1.daddr = daddr;
+      cif1.dWEN = 1;
+    end
+    
   end
   endtask
 
-  $finish
+  //$finish
 endprogram
