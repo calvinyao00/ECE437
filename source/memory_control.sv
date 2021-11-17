@@ -24,6 +24,7 @@ logic drequestor, nxt_drequestor;
 logic irequestor, nxt_irequestor;
 logic dtestbit, itestbit;
 logic nxt_dtestbit, nxt_itestbit;
+logic ccwrite[1:0], nxt_ccwrite;
 
 always_ff @(posedge CLK, negedge nRST) begin 
     if(!nRST) begin
@@ -32,6 +33,7 @@ always_ff @(posedge CLK, negedge nRST) begin
         irequestor <= 0;
         dtestbit <= 0;
         itestbit <= 0;
+        ccwrite <= 0;
     end
     else begin
         state <= nxt_state;
@@ -39,6 +41,7 @@ always_ff @(posedge CLK, negedge nRST) begin
         irequestor <=  nxt_irequestor;
         dtestbit <= nxt_dtestbit;
         itestbit <= nxt_itestbit;
+        ccwrite <= nxt_ccwrite;
     end
 end
 
@@ -50,13 +53,9 @@ always_comb begin
     nxt_irequestor = irequestor;
     casez(state)
         IDLE: begin
-            if(ccif.dREN[dtestbit] | ccif.dWEN[dtestbit]) begin
+            if(ccif.cctrans[0] | ccif.cctrans[1]) begin
                 nxt_state = ARB;
-                nxt_drequestor = dtestbit;
-            end
-            else if(ccif.dREN[!dtestbit] | ccif.dWEN[!dtestbit]) begin
-                nxt_state = ARB;
-                nxt_drequestor = !dtestbit;
+                //nxt_drequestor = dtestbit;
             end
             else if(ccif.iREN[itestbit]) begin
                 nxt_state = IFETCH;
@@ -77,15 +76,15 @@ always_comb begin
         end
         ARB: begin
             nxt_itestbit = !itestbit;
-            if(ccif.dREN[drequestor]) nxt_state = BusRd;
-            else if(ccif.dWEN[drequestor]) nxt_state = BusRdx;
+            if(ccif.ccwrite[nxt_drequestor]) nxt_state = BusRdx;
+            else nxt_state = BusRd;
         end
         BusRd: begin
-            if(ccif.ccwrite[!drequestor]) nxt_state = BusWB1;
+            if(ccif.cctrans[!drequestor]) nxt_state = BusWB1;
             else nxt_state = MEM1;
         end
         BusRdx: begin
-            if(ccif.ccwrite[!drequestor]) nxt_state = BusWB1;
+            if(ccif.cctrans[!drequestor]) nxt_state = BusWB1;
             else nxt_state = MEM1;
         end
         BusWB1: begin
@@ -118,7 +117,7 @@ always_comb begin
     ccif.ramREN = 0;
 
     ccif.ccwait = 0;
-    ccif.ccinv = 2'b0; 
+    ccif.ccinv = 2'b0;
     ccif.ccsnoopaddr = '0;
 
     casez(state) 
@@ -128,10 +127,14 @@ always_comb begin
             ccif.ramREN = ccif.iREN[irequestor];
             ccif.ramaddr = ccif.iaddr[irequestor];
         end
-        /*ARB: begin
-            ccif.ccwait[!drequestor] = 1;
-            ccif.ccsnoopaddr[!drequestor] = ccif.daddr[drequestor];
-        end*/
+        ARB: begin
+            if(ccif.cctrans[dtestbit]) begin
+                nxt_drequestor = dtestbit;
+            end
+            else begin
+                nxt_drequestor = !dtestbit;
+            end
+        end
         BusRd: begin
             ccif.dwait[drequestor] = 1;
             ccif.ccwait[!drequestor] = 1;
@@ -169,7 +172,7 @@ always_comb begin
             ccif.dload[drequestor] = ccif.ramload;
             ccif.ramaddr = ccif.daddr[drequestor];
             ccif.ramREN = ccif.dREN[drequestor];
-            ccif.ramWEN = ccif.dWEN[drequestor];
+            //ccif.ramWEN = ccif.dWEN[drequestor];
             ccif.ramstore = ccif.dstore[drequestor];
         end
         MEM2: begin
@@ -178,7 +181,7 @@ always_comb begin
             ccif.dload[drequestor] = ccif.ramload;
             ccif.ramaddr = ccif.daddr[drequestor];
             ccif.ramREN = ccif.dREN[drequestor];
-            ccif.ramWEN = ccif.dWEN[drequestor];
+            //ccif.ramWEN = ccif.dWEN[drequestor];
             ccif.ramstore = ccif.dstore[drequestor];
         end
         FIN: begin

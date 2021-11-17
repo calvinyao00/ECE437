@@ -17,19 +17,21 @@ logic miss, hit;
 logic [7:0] recent, nxt_recent;
 logic [4:0] iteration, nxt_iteration, itera;
 dcachef_t addr;
+dcachef_t snoopaddr;
 word_t hit_counter, nxt_hit_counter;
-dcache_frame[7:0][1:0] dcaches, nxt_dcaches;
+dcache_frame [7:0][1:0] dcaches, nxt_dcaches;
+dstate_t state, nxt_state;
 
 
 logic[7:0][1:0] empty;
 assign empty = '0;
     
 assign addr = dcachef_t'(dcif.dmemaddr);
+assign snoopaddr = dcachef_t'(cif.ccsnoopaddr);
 typedef enum logic[3:0] {  
-    IDLE, WB1, WB2, ALLO1, ALLO2, COUNT, END, HALT, FLUSH11, FLUSH12, FLUSH21, FLUSH22
+    IDLE, WB1, WB2, ALLO1, ALLO2, COUNT, END, HALT, FLUSH11, FLUSH12, FLUSH21, FLUSH22, SNOOP, SHARE1, SHARE2
 } dstate_t;
 
-dstate_t state, nxt_state;
 
 always_ff @(posedge CLK, negedge nRST) begin 
     if(!nRST) begin
@@ -55,10 +57,29 @@ always_comb begin
     casez(state)
         IDLE: begin
             if(dcif.halt) nxt_state = HALT;
+            else if(cif.ccwait)
+                nxt_state = SNOOP;
             else if(miss) begin
                 if(recent[addr.idx] == 0) nxt_state = (dcaches[addr.idx][0].dirty) ? WB1 : ALLO1;
                 else if(recent[addr.idx] == 1) nxt_state = (dcaches[addr.idx][1].dirty) ? WB1 : ALLO1;
             end
+        end
+        SNOOP: begin
+            if(snoopaddr.tag == dcaches[snoopaddr.idx][0].tag && dcaches[snoopaddr.idx][0].valid) begin
+                if (dcaches[snoopaddr.idx][0].dirty) nxt_state = SHARE1;
+                else (!dcaches[snoopaddr.idx][0].dirty) nxt_state = IDLE;
+            end
+            else if(addr.tag == dcaches[snoopaddr.idx][1].tag) begin
+                if (dcaches[snoopaddr.idx][1].dirty) nxt_state = SHARE1;
+                else (!dcaches[snoopaddr.idx][1].dirty) nxt_state = IDLE;
+            end
+            else nxt_state = IDLE;
+        end
+        SHARE1: begin
+            if (!cif.dwait) nxt_state = SHARE2;
+        end
+        SHARE2: begin
+            if (!cif.dwait) nxt_state = IDLE;
         end
         WB1: if(!cif.dwait) nxt_state = WB2;
         WB2: if(!cif.dwait) nxt_state = ALLO1;
@@ -98,45 +119,112 @@ always_comb begin
     dcif.flushed = (state == END);
     nxt_dcaches = dcaches;
     itera = iteration - 1;
+    cif.ccwrite = dcif.dmemWEN;
     casez(state) 
         IDLE: begin
             nxt_hit_counter = hit_counter;
             if(dcif.halt) nxt_hit_counter = hit_counter;
             else if(dcif.dmemWEN) begin
-                if(addr.tag == dcaches[addr.idx][0].tag) begin
-                    dcif.dhit = 1;
-					nxt_dcaches[addr.idx][0].dirty = 1;
-                    nxt_hit_counter = hit_counter + 1;
-                    nxt_dcaches[addr.idx][0].data[addr.blkoff] = dcif.dmemstore;
-                    nxt_recent[addr.idx] = 1; // old
+                if((addr.tag == dcaches[addr.idx][0].tag)) begin
+                    if(!dcaches[addr.idx][0].dirty) begin
+                        miss = 1;
+                        cif.cctrans = 1;
+                        //cif.ccwrite = 1;
+                    end
+                    else begin
+                        dcif.dhit = 1;
+					    nxt_dcaches[addr.idx][0].dirty = 1;
+                        nxt_hit_counter = hit_counter + 1;
+                        nxt_dcaches[addr.idx][0].data[addr.blkoff] = dcif.dmemstore;
+                        nxt_recent[addr.idx] = 1; // old
+                    end
+                    //cif.cctrans = dcaches[addr.idx][0].dirty ? 0:1;
+                    //cif.ccwrite = 1;            
                 end
                 else if(addr.tag == dcaches[addr.idx][1].tag) begin
-                    dcif.dhit = 1;
-					nxt_dcaches[addr.idx][1].dirty = 1;
-                    nxt_hit_counter = hit_counter + 1;
-                    nxt_dcaches[addr.idx][1].data[addr.blkoff] = dcif.dmemstore;
-                    nxt_recent[addr.idx] = 0; // old
-                end
-                else begin
-                    miss = 1;
-					nxt_hit_counter = hit_counter - 1;
+                    if(!dcaches[addr.idx][1].dirty) begin
+                        miss = 1;
+                        cif.cctrans = 1;
+                        //cif.ccwrite = 1;
+                    end
+                    else begin
+                        dcif.dhit = 1;
+					    nxt_dcaches[addr.idx][1].dirty = 1;
+                        nxt_hit_counter = hit_counter + 1;
+                        nxt_dcaches[addr.idx][1].data[addr.blkoff] = dcif.dmemstore;
+                        nxt_recent[addr.idx] = 0; // old
+                        nxt_hit_counter = hit_counter - 1;
+                    end
+                    //cif.cctrans = dcaches[addr.idx][0].dirty ? 0:1;
+                    //cif.ccwrite = 1;
                 end
             end
             else if(dcif.dmemREN) begin
-                if ((addr.tag == dcaches[addr.idx][0].tag) & dcaches[addr.idx][0].valid) begin
+                if ((addr.tag == dcaches[addr.idx][0].tag) & dcaches[addr.idx][1].valid) begin
 					dcif.dhit = 1;
                     nxt_hit_counter = hit_counter + 1;
                     dcif.dmemload = dcaches[addr.idx][0].data[addr.blkoff];
 					nxt_recent[addr.idx] = 1;
+                    //cif.cctrans = dcaches[addr.idx][0].valid? 1:0;
 				end else if ((addr.tag == dcaches[addr.idx][1].tag) & dcaches[addr.idx][1].valid) begin
 					dcif.dhit = 1;
                     nxt_hit_counter = hit_counter + 1;
 					dcif.dmemload = dcaches[addr.idx][1].data[addr.blkoff];
+                    //cif.cctrans = dcaches[addr.idx][1].valid? 1:0;
 					nxt_recent[addr.idx] = 0;
 				end else begin
 					miss = 1;
 					nxt_hit_counter = hit_counter - 1;
+                    cif.cctrans = 1;
+                    //cif.ccwrite = 0;
 				end
+            end
+        end
+        SNOOP: begin
+            if((snoopaddr.tag == dcaches[snoopaddr.idx][0].tag) && (dcaches[snoopaddr.idx][0].valid)) begin
+                if (cif.ccinv) begin
+                    nxt_dcaches[snoopaddr.idx][0].valid = 0;
+                    nxt_dcaches[snoopaddr.idx][0].dirty = 0;
+                    cif.cctrans = dcaches[snoopaddr.idx][0].dirty;
+                end
+                else begin
+                   nxt_dcaches[snoopaddr.idx][0].dirty = 0;
+                   //also need to tell bus if writing back is necessary
+                   cif.cctrans = dcaches[snoopaddr.idx][0].dirty;
+                end
+            end
+            else if((snoopaddr.tag == dcaches[snoopaddr.idx][1].tag) && (dcaches[snoopaddr.idx][1].valid))begin
+                if (cif.ccinv) begin
+                    nxt_dcaches[snoopaddr.idx][1].valid = 0;
+                    nxt_dcaches[snoopaddr.idx][1].dirty = 0;
+                    //also need to tell bus if writing back is necessary
+                    cif.cctrans = dcaches[snoopaddr.idx][1].dirty;
+                end
+                else begin
+                   nxt_dcaches[snoopaddr.idx][1].dirty = 0;
+                   //also need to tell bus if writing back is necessary
+                   cif.cctrans = dcaches[snoopaddr.idx][1].dirty;
+                end
+            end
+        end
+        SHARE1: begin
+            if((snoopaddr.tag == dcaches[snoopaddr.idx][0].tag) ) begin
+                cif.dstore = dcaches[snoopaddr.idx][0].data[0];
+                cif.daddr = {dcaches[snoopaddr.idx][0].tag, snoopaddr.idx, 3'd0};
+            end
+            else if((snoopaddr.tag == dcaches[snoopaddr.idx][1].tag))begin
+                cif.dstore = dcaches[snoopaddr.idx][1].data[0];
+                cif.daddr = {dcaches[snoopaddr.idx][1].tag, snoopaddr.idx, 3'd0};
+            end
+        end
+        SHARE2: begin
+            if((snoopaddr.tag == dcaches[snoopaddr.idx][0].tag) ) begin
+                cif.dstore = dcaches[snoopaddr.idx][0].data[1];
+                cif.daddr = {dcaches[snoopaddr.idx][0].tag, addr.idx, 3'd0};
+            end
+            else if((snoopaddr.tag == dcaches[snoopaddr.idx][1].tag))begin
+                cif.dstore = dcaches[snoopaddr.idx][1].data[1];
+                cif.daddr = {dcaches[snoopaddr.idx][1].tag, snoopaddr.idx, 3'd0};
             end
         end
         WB1: begin
@@ -144,6 +232,7 @@ always_comb begin
             if(recent[addr.idx] == 0) begin
                 cif.dstore = dcaches[addr.idx][0].data[0];
                 cif.daddr = {dcaches[addr.idx][0].tag, addr.idx, 3'd0};
+                
             end
             else if(recent[addr.idx] == 1) begin
                 cif.dstore = dcaches[addr.idx][1].data[0];
@@ -164,6 +253,7 @@ always_comb begin
         ALLO1: begin
                 cif.dREN = 1;
                 cif.daddr = {addr.tag, addr.idx, 3'd0};
+                //cif.cctrans = 1;
                 if(recent[addr.idx] == 0) nxt_dcaches[addr.idx][0].data[0] = cif.dload;
                 else nxt_dcaches[addr.idx][1].data[0] = cif.dload;
         end
