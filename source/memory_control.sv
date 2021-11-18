@@ -13,7 +13,7 @@ import cpu_types_pkg::*;
   // type import
   import cpu_types_pkg::*;
   typedef enum logic[3:0] {  
-    IDLE, ARB, BusRd, BusRdx, BusWB1, BusWB2, MEM1, MEM2, FIN, IARB, IFETCH
+    IDLE, ARB, WB1, WB2, BusRd, BusRdx, BusWB1, BusWB2, MEM1, MEM2, FIN, IARB, IFETCH
 } bstate_t;
 
 bstate_t state, nxt_state;
@@ -22,92 +22,104 @@ parameter CPUS = 2;
 
 logic drequestor, nxt_drequestor;
 logic irequestor, nxt_irequestor;
+logic snooper, nxt_snooper;
 logic dtestbit, itestbit;
 logic nxt_dtestbit, nxt_itestbit;
-logic ccwrite[1:0], nxt_ccwrite;
-
 always_ff @(posedge CLK, negedge nRST) begin 
     if(!nRST) begin
         state <= IDLE;
         drequestor <= 0;
         irequestor <= 0;
+        snooper <= 0;
         dtestbit <= 0;
         itestbit <= 0;
-        ccwrite <= 0;
+        //snooped <= 0;
+        //ccwrite <= 0;
     end
     else begin
         state <= nxt_state;
         drequestor <= nxt_drequestor;
         irequestor <=  nxt_irequestor;
+        snooper <= nxt_snooper;
         dtestbit <= nxt_dtestbit;
         itestbit <= nxt_itestbit;
-        ccwrite <= nxt_ccwrite;
+        //snooped <= nxt_snooped;
+        //ccwrite <= nxt_ccwrite;
     end
 end
 
 always_comb begin
     nxt_state = state;
-    nxt_dtestbit = dtestbit;
-    nxt_itestbit = itestbit;
     nxt_drequestor = drequestor;
     nxt_irequestor = irequestor;
+    nxt_snooper = snooper;
+    nxt_dtestbit = dtestbit;
+    nxt_itestbit = itestbit;
+    //nxt_snooped = snooped;
     casez(state)
         IDLE: begin
             if(ccif.cctrans[0] | ccif.cctrans[1]) begin
                 nxt_state = ARB;
+                nxt_dtestbit = !dtestbit;
+                if(ccif.cctrans[dtestbit]) nxt_snooper = dtestbit;
+                else nxt_snooper = dtestbit;
                 //nxt_drequestor = dtestbit;
             end
-            else if(ccif.iREN[itestbit]) begin
-                nxt_state = IFETCH;
-                nxt_irequestor = itestbit;
+            else if(ccif.dWEN[0] | ccif.dWEN[1]) begin
+                nxt_state = WB1;
             end
-            else if(ccif.iREN[!itestbit]) begin
+            else if(ccif.iREN[0] | ccif.iREN[1]) begin
                 nxt_state = IFETCH;
-                nxt_irequestor = !itestbit;
+                nxt_itestbit = !itestbit;
+                if(ccif.iREN[itestbit]) nxt_irequestor = itestbit;
+                else nxt_irequestor = !itestbit;
             end
         end
-        /*IARB: begin
-            nxt_itestbit = !itestbit;
-            nxt_state = IFETCH;
-        end*/
-        IFETCH: begin
-            nxt_itestbit = !itestbit;
+        WB1: begin
+            if(ccif.ramstate == ACCESS) nxt_state = WB2;
+        end
+        WB2: begin
             if(ccif.ramstate == ACCESS) nxt_state = IDLE;
         end
         ARB: begin
-            nxt_itestbit = !itestbit;
-            if(ccif.ccwrite[nxt_drequestor]) nxt_state = BusRdx;
+            if(ccif.ccwrite[snooper]) nxt_state = BusRdx;
             else nxt_state = BusRd;
         end
-        BusRd: begin
-            if(ccif.cctrans[!drequestor]) nxt_state = BusWB1;
+        BusRdx: begin
+            if(ccif.cctrans[!snooper]) nxt_state = BusWB1;
             else nxt_state = MEM1;
         end
-        BusRdx: begin
-            if(ccif.cctrans[!drequestor]) nxt_state = BusWB1;
+        BusRd: begin
+            if(ccif.cctrans[!snooper]) nxt_state = BusWB1;
             else nxt_state = MEM1;
         end
         BusWB1: begin
             if(ccif.ramstate == ACCESS) nxt_state = BusWB2;
         end
         BusWB2: begin
-            if(ccif.ramstate == ACCESS & ccif.cctrans[!drequestor]) nxt_state = MEM1;
+            if(ccif.ramstate == ACCESS) nxt_state = IDLE;
         end
         MEM1: begin
             if(ccif.ramstate == ACCESS) nxt_state = MEM2;
         end
         MEM2: begin
-            if(ccif.ramstate == ACCESS) nxt_state = FIN;
+            if(ccif.ramstate == ACCESS) nxt_state = IDLE;
         end
-        FIN: begin
+        IFETCH: begin
+            //nxt_itestbit = !itestbit;
+            if(ccif.ramstate == ACCESS) nxt_state = IDLE;
+        end
+        /*FIN: begin
             if(ccif.cctrans[drequestor]) nxt_state = IDLE;
-        end
+        end*/
     endcase
 end
 
 always_comb begin
-    ccif.iwait = '0;
-    ccif.dwait = '0;
+    ccif.iwait[0] = 1;
+    ccif.iwait[1] = 1;
+    ccif.dwait[0] = 1;
+    ccif.dwait[1] = 1;
     ccif.iload = '0;
     ccif.dload = '0;
 
@@ -117,75 +129,102 @@ always_comb begin
     ccif.ramREN = 0;
 
     ccif.ccwait = 0;
-    ccif.ccinv = 2'b0;
+    ccif.ccinv[0] = ccif.ccwrite[1];
+    ccif.ccinv[1] = ccif.ccwrite[0];
     ccif.ccsnoopaddr = '0;
 
     casez(state) 
+        WB1: begin
+            if(ccif.dWEN[1]) begin
+                ccif.dwait[1] = ccif.ramstate != ACCESS;
+                ccif.ramstore = ccif.dstore[1];
+                ccif.ramaddr = ccif.daddr[1];
+                ccif.ramWEN = ccif.dWEN[1];
+                ccif.ccwait[0] = 1;
+            end 
+            else if(ccif.dWEN[0]) begin
+                ccif.dwait[0] = ccif.ramstate != ACCESS;
+                ccif.ramstore = ccif.dstore[0];
+                ccif.ramaddr = ccif.daddr[0];
+                ccif.ramWEN = ccif.dWEN[0];
+                ccif.ccwait[1] = 0;
+            end
+        end
+        WB2: begin
+            if(ccif.dWEN[1]) begin
+                ccif.dwait[1] = ccif.ramstate != ACCESS;
+                ccif.ramstore = ccif.dstore[1];
+                ccif.ramaddr = ccif.daddr[1];
+                ccif.ramWEN = ccif.dWEN[1];
+                ccif.ccwait[0] = 1;
+            end 
+            else if(ccif.dWEN[0]) begin
+                ccif.dwait[0] = ccif.ramstate != ACCESS;
+                ccif.ramstore = ccif.dstore[0];
+                ccif.ramaddr = ccif.daddr[0];
+                ccif.ramWEN = ccif.dWEN[0];
+                ccif.ccwait[1] = 0;
+            end
+        end
+        ARB: begin
+            ccif.ccwait[!snooper] = 1;
+            ccif.ccsnoopaddr[!snooper] = ccif.daddr[snooper];
+        end
+        BusRd: begin
+            ccif.dwait[snooper] = 1;
+            ccif.ccwait[!snooper] = 1;
+            ccif.ccsnoopaddr[!snooper] = ccif.daddr[snooper];
+        end
+        BusRdx: begin
+            ccif.dwait[snooper] = 1;
+            ccif.ccwait[!snooper] = 1;
+            //ccif.ccwait[!drequestor] = 1;
+            ccif.ccsnoopaddr[!snooper] = ccif.daddr[snooper];
+            ccif.ccinv[!snooper] = 1;
+        end
+        MEM1: begin
+            //ccif.ccwait[!drequestor] = 1;
+            ccif.dwait[snooper] = (ccif.ramstate != ACCESS);
+            ccif.dload[snooper] = ccif.ramload;
+            ccif.ramaddr = ccif.daddr[snooper];
+            ccif.ramREN = ccif.dREN[snooper];
+            //ccif.ramWEN = ccif.dWEN[drequestor];
+            ccif.ramstore = ccif.dstore[snooper];
+        end
+        MEM2: begin
+            //ccif.ccwait[!drequestor] = 1;
+            ccif.dwait[snooper] = (ccif.ramstate != ACCESS);
+            ccif.dload[snooper] = ccif.ramload;
+            ccif.ramaddr = ccif.daddr[snooper];
+            ccif.ramREN = ccif.dREN[snooper];
+            //ccif.ramWEN = ccif.dWEN[drequestor];
+            ccif.ramstore = ccif.dstore[snooper];
+        end
+        BusWB1: begin
+            ccif.ramaddr = ccif.daddr[!snooper];
+            ccif.ramstore = ccif.dstore[!snooper];
+            ccif.ramWEN = 1;
+            ccif.dwait[!snooper] = (ccif.ramstate != ACCESS);
+            ccif.dwait[snooper] = (ccif.ramstate != ACCESS);
+            ccif.dload[snooper] = (ccif.dstore[!snooper]);
+            ccif.ccsnoopaddr[!snooper] = ccif.daddr[snooper];
+            ccif.ccwait[!snooper] = 1;
+        end
+        BusWB2: begin
+            ccif.ramaddr = ccif.daddr[!snooper];
+            ccif.ramstore = ccif.dstore[!snooper];
+            ccif.ramWEN = 1;
+            ccif.dwait[!snooper] = (ccif.ramstate != ACCESS);
+            ccif.dwait[snooper] = (ccif.ramstate != ACCESS);
+            ccif.dload[snooper] = (ccif.dstore[!snooper]);
+            ccif.ccsnoopaddr[!snooper] = ccif.daddr[snooper];
+            ccif.ccwait[!snooper] = 1;
+        end
         IFETCH: begin
             ccif.iload[irequestor] = ccif.ramload;
             ccif.iwait[irequestor] = ccif.ramstate != ACCESS;
             ccif.ramREN = ccif.iREN[irequestor];
             ccif.ramaddr = ccif.iaddr[irequestor];
-        end
-        ARB: begin
-            if(ccif.cctrans[dtestbit]) begin
-                nxt_drequestor = dtestbit;
-            end
-            else begin
-                nxt_drequestor = !dtestbit;
-            end
-        end
-        BusRd: begin
-            ccif.dwait[drequestor] = 1;
-            ccif.ccwait[!drequestor] = 1;
-            ccif.ccsnoopaddr[!drequestor] = ccif.daddr[drequestor];
-        end
-        BusRdx: begin
-            ccif.dwait[drequestor] = 1;
-            ccif.ccwait[!drequestor] = 1;
-            //ccif.ccwait[!drequestor] = 1;
-            ccif.ccsnoopaddr[!drequestor] = ccif.daddr[drequestor];
-            ccif.ccinv[!drequestor] = 1;
-        end
-        BusWB1: begin
-            //ccif.ccwait = 2'b11;
-            ccif.ccwait[!drequestor] = 1;
-            //ccif.ccwait[!drequestor] = 1;
-            //ccif.dwait[drequestor] = (ccif.ramstate != ACCESS);
-            ccif.dwait[!drequestor] = (ccif.ramstate != ACCESS);
-            ccif.ramstore = ccif.dstore[!drequestor];
-            ccif.ramaddr = ccif.daddr[!drequestor];
-            ccif.ramWEN = 1;//ccif.dWEN[!drequestor];
-        end
-        BusWB2: begin
-            //ccif.ccwait = 2'b11;
-            //ccif.ccwait[!drequestor] = 1;
-            ccif.ccwait[!drequestor] = 1;
-            ccif.dwait[!drequestor] = (ccif.ramstate != ACCESS);
-            ccif.ramstore = ccif.dstore[!drequestor];
-            ccif.ramaddr = ccif.daddr[!drequestor];
-            ccif.ramWEN = 1;//ccif.dWEN[!drequestor];
-        end
-        MEM1: begin
-            //ccif.ccwait[!drequestor] = 1;
-            ccif.dwait[drequestor] = (ccif.ramstate != ACCESS);
-            ccif.dload[drequestor] = ccif.ramload;
-            ccif.ramaddr = ccif.daddr[drequestor];
-            ccif.ramREN = ccif.dREN[drequestor];
-            //ccif.ramWEN = ccif.dWEN[drequestor];
-            ccif.ramstore = ccif.dstore[drequestor];
-        end
-        MEM2: begin
-            //ccif.ccwait[!drequestor] = 1;
-            ccif.dwait[drequestor] = (ccif.ramstate != ACCESS);
-            ccif.dload[drequestor] = ccif.ramload;
-            ccif.ramaddr = ccif.daddr[drequestor];
-            ccif.ramREN = ccif.dREN[drequestor];
-            //ccif.ramWEN = ccif.dWEN[drequestor];
-            ccif.ramstore = ccif.dstore[drequestor];
-        end
-        FIN: begin
-            ccif.ccwait[drequestor] = 0;
         end
     endcase
 end

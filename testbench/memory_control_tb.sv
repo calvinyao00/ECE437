@@ -25,13 +25,21 @@ module memory_control_tb;
   // clock
   always #(PERIOD/2) CLK++;
 
+
   // interface
-  caches_if cif();
+  datapath_cache_if         dcif0 ();
+  datapath_cache_if         dcif1 ();
+
+  // interface
+  caches_if cif0();
   caches_if cif1();
-  cache_control_if ccif (cif, cif1);
+  cache_control_if ccif (cif0, cif1);
   cpu_ram_if cramif();
   // test program
   test PROG (CLK, nRST);
+  // map caches
+  caches       CM0 (CLK, nRST, dcif0, cif0);
+  caches       CM1 (CLK, nRST, dcif1, cif1);
   // DUT
 `ifndef MAPPED
   memory_control DUT(CLK, nRST, ccif);
@@ -53,6 +61,11 @@ module memory_control_tb;
     .\ccif.ramaddr (ccif.ramaddr),
     .\ccif.ramWEN (ccif.ramWEN),
     .\ccif.ramREN (ccif.ramREN),
+    .\ccif.ccwrite (ccif.ccwrite),
+    .\ccif.cctrans (ccif.cctrans),
+    .\ccif.ccwait (ccif.ccwait),
+    .\ccif.ccinv (ccif.ccinv), 
+    .\ccif.ccsnoopaddr (ccif.ccsnoopaddr)
     .\nRST (nRST),
     .\CLK (CLK)
   );
@@ -109,14 +122,12 @@ program test (input logic CLK, output logic nRST);
     reset_bus();
     #(PERIOD * 1)
     read_instr(0, 32'h00000020);
-    cif.ccwrite = '0;
     read_instr(1, 32'h00000030);
-    cif.ccwrite = '0;
     #(PERIOD * 6)
-    cif1.iREN = '0;
-    cif.iREN = '0;
+    dcif1.imemREN = '0;
+    dcif0.imemREN = '0;
     #(PERIOD * 4)
-
+ 
     // *******************************************
     // Test Case 3: Read data from RAM
     // *******************************************
@@ -125,10 +136,9 @@ program test (input logic CLK, output logic nRST);
     reset_bus();
     read_data(0, 32'h00000020);
     #(PERIOD * 6)
-    cif.cctrans = '1;
-    cif.dREN= 0;
-    #(PERIOD * 4)
-    
+    dcif1.dmemREN = '0;
+    #(PERIOD * 4);
+  /*
     // *******************************************
     // Test Case 4: Read data and invoke a write back
     // *******************************************
@@ -192,7 +202,7 @@ program test (input logic CLK, output logic nRST);
     cif1.cctrans = '1;
     cif1.dWEN= 0;
     #(PERIOD * 2);
-/*  
+ 
 
     // *******************************************
     // Test Case 5: Conflicting instruction read and data read
@@ -208,7 +218,7 @@ program test (input logic CLK, output logic nRST);
     // Test Case 6: Confliif(ccif.iREN)
         ccif.iwait = 1;cting instruction read and data write
     // *******************************************
-    test_case_num += 1;sim:/memory_control_tb/DUT/ccif/iREN
+    test_case_num += 1;
 
     test_case = "Conflicting instruction read and data write";
     reset_bus();
@@ -222,13 +232,13 @@ program test (input logic CLK, output logic nRST);
 
 
   end
-
+  /*
   task automatic dump_memory();
     string filename = "memcpu.hex";
     int memfd;
 
-    memory_control_tb.cif.daddr = 0;
-    memory_control_tb.cif.dWEN = 0;
+    memory_control_tb.dcif.daddr = 0;
+    memory_control_tb.dcif.dWEN = 0;
     memory_control_tb.cif.dREN = 0;
 
     memfd = $fopen(filename,"w");
@@ -263,55 +273,55 @@ program test (input logic CLK, output logic nRST);
       $display("Finished memory dump.");
     end
   endtask
-
+*/
   task reset_bus;
-    cif.iaddr = '0;
-    cif.iREN = '0;
-    cif.dREN = '0;
-    cif.dWEN = '0;
-    cif.daddr = '0;
-    cif.dstore = '0;
-    cif.cctrans = '0;
-    cif.ccwrite = '0;
-    cif1.iaddr = '0;
-    cif1.iREN = '0;
-    cif1.dREN = '0;
-    cif1.dWEN = '0;
-    cif1.daddr = '0;
-    cif1.dstore = '0;
-    cif1.cctrans = '0;
-    cif1.ccwrite = '0;
+    dcif0.imemaddr = '0;
+    dcif0.imemREN = '0;
+    dcif0.dmemREN = '0;
+    dcif0.dmemWEN = '0;
+    dcif0.dmemaddr = '0;
+    dcif0.dmemstore = '0;
+    //dcif0.cctrans = '0;
+    //dcif0.ccwrite = '0;
+    dcif0.imemaddr = '0;
+    dcif1.imemREN = '0;
+    dcif1.dmemREN = '0;
+    dcif1.dmemWEN = '0;
+    dcif1.dmemaddr = '0;
+    dcif1.dmemstore = '0;
+    //dcif1.cctrans = '0;
+    //dcif1.ccwrite = '0;
   endtask
 
   task read_instr;
-  input logic cache_number;
+  input logic core_number;
   input word_t iaddr;
   begin
-    if(!cache_number) begin
-      cif.iaddr = iaddr;
-      cif.iREN = 1;
+    if(!core_number) begin
+      dcif0.imemaddr = iaddr;
+      dcif0.imemREN = 1;
     end
     else begin
-      cif1.iaddr = iaddr;
-      cif1.iREN = 1;
+      dcif1.imemaddr = iaddr;
+      dcif1.imemREN = 1;
     end
     
   end
   endtask
 
   task read_data;
-  input logic cache_number;
+  input logic core_number;
   input word_t daddr;
   begin
-    if(!cache_number) begin
-      cif.daddr = daddr;
-      cif.dREN = 1;
-      cif.dWEN = 0;
+    if(!core_number) begin
+      dcif0.dmemaddr = daddr;
+      dcif0.dmemREN = 1;
+      dcif0.dmemWEN = 0;
     end
     else begin
-      cif1.daddr = daddr;
-      cif1.dREN = 1;
-      cif1.dWEN = 0;
+      dcif1.dmemaddr = daddr;
+      dcif1.dmemREN = 1;
+      dcif1.dmemWEN = 0;
     end
     
   end
@@ -323,16 +333,14 @@ program test (input logic CLK, output logic nRST);
   input word_t daddr;
   begin
     if(!cache_number) begin
-      cif.dREN = 0;
-      cif.dstore = data;
-      cif.daddr = daddr;
-      cif.dWEN = 1;
+      dcif0.dmemaddr = daddr;
+      dcif0.dmemREN = 0;
+      dcif0.dmemWEN = 1;
     end
     else begin
-      cif1.dREN = 0;
-      cif1.dstore = data;
-      cif1.daddr = daddr;
-      cif1.dWEN = 1;
+      dcif1.dmemaddr = daddr;
+      dcif1.dmemREN = 0;
+      dcif1.dmemWEN = 1;
     end
     
   end
