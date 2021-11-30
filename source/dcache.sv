@@ -291,11 +291,11 @@ always_comb begin
         SHARE2: begin
             if((snoopaddr.tag == dcaches[snoopaddr.idx][0].tag) ) begin
                 cif.dstore = dcaches[snoopaddr.idx][0].data[1];
-                cif.daddr = {dcaches[snoopaddr.idx][0].tag, addr.idx, 3'd0};
+                cif.daddr = {dcaches[snoopaddr.idx][0].tag, snoopaddr.idx, 3'd4};
             end
             else if((snoopaddr.tag == dcaches[snoopaddr.idx][1].tag))begin
                 cif.dstore = dcaches[snoopaddr.idx][1].data[1];
-                cif.daddr = {dcaches[snoopaddr.idx][1].tag, snoopaddr.idx, 3'd0};
+                cif.daddr = {dcaches[snoopaddr.idx][1].tag, snoopaddr.idx, 3'd4};
             end
         end
         WB1: begin
