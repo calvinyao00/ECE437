@@ -47,7 +47,7 @@ value:
 word1:
   cfw 0x0000DEAD
   cfw 0
-#word 1 starts at 414
+#word 2 starts at 414
 word2:
   cfw 0x0000BEEF
 
