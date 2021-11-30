@@ -20,6 +20,9 @@ add wave -noupdate /memory_control_tb/CM0/cif/dload
 add wave -noupdate /memory_control_tb/CM0/cif/dstore
 add wave -noupdate /memory_control_tb/CM0/cif/iaddr
 add wave -noupdate /memory_control_tb/CM0/cif/daddr
+add wave -noupdate /memory_control_tb/CM0/DCACHE/addr
+add wave -noupdate /memory_control_tb/CM0/DCACHE/state
+add wave -noupdate /memory_control_tb/CM0/DCACHE/dcaches
 add wave -noupdate -divider Cache1
 add wave -noupdate /memory_control_tb/CM1/dcif/ihit
 add wave -noupdate /memory_control_tb/CM1/dcif/imemREN
@@ -31,11 +34,14 @@ add wave -noupdate /memory_control_tb/CM1/dcif/dmemWEN
 add wave -noupdate /memory_control_tb/CM1/dcif/dmemaddr
 add wave -noupdate /memory_control_tb/CM1/dcif/dmemload
 add wave -noupdate /memory_control_tb/CM1/dcif/dmemstore
+add wave -noupdate /memory_control_tb/CM1/DCACHE/state
 add wave -noupdate /memory_control_tb/CM1/cif/iload
-add wave -noupdate /memory_control_tb/CM1/cif/dload
-add wave -noupdate /memory_control_tb/CM1/cif/dstore
 add wave -noupdate /memory_control_tb/CM1/cif/iaddr
+add wave -noupdate /memory_control_tb/CM1/cif/dstore
 add wave -noupdate /memory_control_tb/CM1/cif/daddr
+add wave -noupdate /memory_control_tb/CM1/cif/dload
+add wave -noupdate /memory_control_tb/CM1/DCACHE/addr
+add wave -noupdate /memory_control_tb/CM1/DCACHE/dcaches
 add wave -noupdate -divider {memory contoller}
 add wave -noupdate /memory_control_tb/DUT/state
 add wave -noupdate /memory_control_tb/DUT/ccif/iREN
@@ -46,10 +52,11 @@ add wave -noupdate /memory_control_tb/DUT/ccif/dWEN
 add wave -noupdate /memory_control_tb/DUT/ccif/dload
 add wave -noupdate /memory_control_tb/DUT/ccif/dstore
 add wave -noupdate /memory_control_tb/DUT/ccif/daddr
+add wave -noupdate /memory_control_tb/DUT/drequestor
 add wave -noupdate /memory_control_tb/DUT/ccif/ccwait
 add wave -noupdate /memory_control_tb/DUT/ccif/ccinv
 add wave -noupdate /memory_control_tb/DUT/ccif/ccwrite
-add wave -noupdate /memory_control_tb/DUT/ccif/cctrans
+add wave -noupdate -expand /memory_control_tb/DUT/ccif/cctrans
 add wave -noupdate /memory_control_tb/DUT/ccif/ccsnoopaddr
 add wave -noupdate -divider {RAM side}
 add wave -noupdate /memory_control_tb/DUT/ccif/ramWEN
@@ -59,7 +66,7 @@ add wave -noupdate /memory_control_tb/DUT/ccif/ramaddr
 add wave -noupdate /memory_control_tb/DUT/ccif/ramstore
 add wave -noupdate /memory_control_tb/DUT/ccif/ramload
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {145259 ps} 0}
+WaveRestoreCursors {{Cursor 1} {275055 ps} 0}
 quietly wave cursor active 1
 configure wave -namecolwidth 293
 configure wave -valuecolwidth 249
@@ -75,4 +82,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {38960 ps} {171634 ps}
+WaveRestoreZoom {238960 ps} {371634 ps}

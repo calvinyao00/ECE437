@@ -136,11 +136,21 @@ program test (input logic CLK, output logic nRST);
     reset_bus();
     read_data(0, 32'h00000020);
     #(PERIOD * 6)
-    dcif1.dmemREN = '0;
-    #(PERIOD * 4);
-  /*
+    dcif0.dmemREN = '0;
+    #(PERIOD * 4)
     // *******************************************
-    // Test Case 4: Read data and invoke a write back
+    // Test Case 4: write data and invoke a write back
+    // *******************************************
+    test_case_num += 1;
+    test_case = "Cache0 write data on a shared block";
+    reset_bus();
+    write_data(0, 32'habababab, 32'h00000020);
+    #(PERIOD * 6)
+    dcif0.dmemWEN = '0;
+    #(PERIOD * 4);
+    /*
+    // *******************************************
+    // Test Case 5: Read data and invoke a write back
     // *******************************************
     test_case_num += 1;
     test_case = "Cache0 Read data and invoke a write back";
@@ -154,22 +164,8 @@ program test (input logic CLK, output logic nRST);
     cif.cctrans = '1;
     cif.dREN= 0;
     #(PERIOD * 2)
-
-    // *******************************************
-    // Test Case 5: write data and invoke a write back
-    // *******************************************
-    test_case_num += 1;
-    test_case = "Cache0 write data and invoke a write back";
-    reset_bus();
-    write_data(0, 32'habababab, 32'h00000020);
-    cif1.ccwrite = '1;
-    cif1.dstore = 32'habababab;
-    #(PERIOD * 6)
-    cif1.cctrans= '1;
-    #(PERIOD * 4)
-    cif.cctrans = '1;
-    cif.dWEN= 0;
-    #(PERIOD * 2)
+ 
+    
 
     // *******************************************
     // Test Case 6: Read data and invoke a write back
@@ -336,11 +332,13 @@ program test (input logic CLK, output logic nRST);
       dcif0.dmemaddr = daddr;
       dcif0.dmemREN = 0;
       dcif0.dmemWEN = 1;
+      dcif0.dmemstore = data;
     end
     else begin
       dcif1.dmemaddr = daddr;
       dcif1.dmemREN = 0;
       dcif1.dmemWEN = 1;
+      dcif1.dmemstore = data;
     end
     
   end

@@ -59,10 +59,18 @@ always_comb begin
     casez(state)
         IDLE: begin
             if(ccif.cctrans[0] | ccif.cctrans[1]) begin
-                nxt_state = ARB;
+                
                 nxt_dtestbit = !dtestbit;
-                if(ccif.cctrans[dtestbit]) nxt_snooper = dtestbit;
-                else nxt_snooper = dtestbit;
+                if(ccif.cctrans[dtestbit]) begin
+                    nxt_snooper = dtestbit;
+                    nxt_state = ccif.ccwrite[dtestbit] ? BusRdx: BusRd;
+                    //ccif.ccwait = dtestbit ? 2'b01:2'b10;
+                end
+                else begin
+                    nxt_snooper = !dtestbit;
+                    nxt_state = ccif.ccwrite[!dtestbit] ? BusRdx: BusRd;
+                    //ccif.ccwait = dtestbit ? 2'b10:2'b01;
+                end
                 //nxt_drequestor = dtestbit;
             end
             else if(ccif.dWEN[0] | ccif.dWEN[1]) begin
@@ -166,6 +174,11 @@ always_comb begin
                 ccif.ccwait[1] = 0;
             end
         end
+        IDLE: begin
+            if(ccif.cctrans[0] | ccif.cctrans[1]) begin
+                ccif.ccwait = nxt_snooper ? 2'b01:2'b10;
+            end
+        end
         ARB: begin
             ccif.ccwait[!snooper] = 1;
             ccif.ccsnoopaddr[!snooper] = ccif.daddr[snooper];
@@ -178,25 +191,26 @@ always_comb begin
         BusRdx: begin
             ccif.dwait[snooper] = 1;
             ccif.ccwait[!snooper] = 1;
-            //ccif.ccwait[!drequestor] = 1;
             ccif.ccsnoopaddr[!snooper] = ccif.daddr[snooper];
             ccif.ccinv[!snooper] = 1;
         end
         MEM1: begin
-            //ccif.ccwait[!drequestor] = 1;
+            ccif.ccwait[!snooper] = 1;
             ccif.dwait[snooper] = (ccif.ramstate != ACCESS);
-            ccif.dload[snooper] = ccif.ramload;
+            //ccif.dwait[!snooper] = (ccif.ramstate != ACCESS);
+            ccif.dload[snooper] = ccif.ramstate ==  ACCESS ? ccif.ramload : '0;
             ccif.ramaddr = ccif.daddr[snooper];
-            ccif.ramREN = ccif.dREN[snooper];
+            ccif.ramREN = 1; //ccif.dREN[snooper];
             //ccif.ramWEN = ccif.dWEN[drequestor];
             ccif.ramstore = ccif.dstore[snooper];
         end
         MEM2: begin
-            //ccif.ccwait[!drequestor] = 1;
+            ccif.ccwait[!snooper] = 1;
             ccif.dwait[snooper] = (ccif.ramstate != ACCESS);
-            ccif.dload[snooper] = ccif.ramload;
+            //ccif.dwait[!snooper] = (ccif.ramstate != ACCESS);
+            ccif.dload[snooper] = ccif.ramstate ==  ACCESS ? ccif.ramload : '0;
             ccif.ramaddr = ccif.daddr[snooper];
-            ccif.ramREN = ccif.dREN[snooper];
+            ccif.ramREN = 1; //ccif.dREN[snooper];
             //ccif.ramWEN = ccif.dWEN[drequestor];
             ccif.ramstore = ccif.dstore[snooper];
         end
@@ -221,7 +235,7 @@ always_comb begin
             ccif.ccwait[!snooper] = 1;
         end
         IFETCH: begin
-            ccif.iload[irequestor] = ccif.ramload;
+            ccif.iload[irequestor] = ccif.ramstate ==  ACCESS ? ccif.ramload : '0;
             ccif.iwait[irequestor] = ccif.ramstate != ACCESS;
             ccif.ramREN = ccif.iREN[irequestor];
             ccif.ramaddr = ccif.iaddr[irequestor];

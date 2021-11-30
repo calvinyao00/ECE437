@@ -13,7 +13,8 @@ module dcache(
 import cpu_types_pkg::*;
 
 logic dhit;
-logic miss, hit;
+logic miss, hit, shabi_miss;
+logic way, nxt_way;
 logic [7:0] recent, nxt_recent;
 logic [4:0] iteration, nxt_iteration, itera;
 dcachef_t addr;
@@ -27,8 +28,8 @@ assign empty = '0;
     
 assign addr = dcachef_t'(dcif.dmemaddr);
 assign snoopaddr = dcachef_t'(cif.ccsnoopaddr);
-typedef enum logic[3:0] {  
-    IDLE, WB1, WB2, ALLO1, ALLO2, COUNT, END, HALT, FLUSH11, FLUSH12, FLUSH21, FLUSH22, SNOOP, SHARE1, SHARE2
+typedef enum logic[4:0] {  
+    IDLE, WB1, WB2, WAIT1, WAIT2, ALLO1, ALLO2, COUNT, END, HALT, FLUSH11, FLUSH12, FLUSH21, FLUSH22, SNOOP, SHARE1, SHARE2
 } dstate_t;
 dstate_t state, nxt_state;
 
@@ -39,6 +40,7 @@ always_ff @(posedge CLK, negedge nRST) begin
         dcaches <= '0;
         iteration <= '0;
         recent <= 0;
+        way <= 0;
     end
     else begin
         state <= nxt_state;
@@ -46,6 +48,7 @@ always_ff @(posedge CLK, negedge nRST) begin
         dcaches <= nxt_dcaches;
         iteration <= nxt_iteration;
         recent <= nxt_recent;
+        way <= nxt_way;
     end
 end
 
@@ -58,6 +61,8 @@ always_comb begin
             if(dcif.halt) nxt_state = HALT;
             else if(cif.ccwait)
                 nxt_state = SNOOP;
+            else if(shabi_miss)
+                nxt_state = WAIT1;
             else if(miss) begin
                 if(recent[addr.idx] == 0) nxt_state = (dcaches[addr.idx][0].dirty) ? WB1 : ALLO1;
                 else if(recent[addr.idx] == 1) nxt_state = (dcaches[addr.idx][1].dirty) ? WB1 : ALLO1;
@@ -74,6 +79,12 @@ always_comb begin
             end
             else nxt_state = IDLE;
         end
+        WAIT1: begin
+            if(!cif.dwait) nxt_state = WAIT2;
+        end
+        WAIT2: begin
+            if(!cif.dwait) nxt_state = IDLE;
+        end
         SHARE1: begin
             if (!cif.dwait) nxt_state = SHARE2;
         end
@@ -82,19 +93,25 @@ always_comb begin
         end
         WB1: if(!cif.dwait) nxt_state = WB2;
         WB2: if(!cif.dwait) nxt_state = ALLO1;
-        ALLO1: if(!cif.dwait) nxt_state = ALLO2;
+        ALLO1: begin
+            if(!cif.dwait) nxt_state = ALLO2;
+            //if(cif.ccwait) nxt_state = SNOOP;
+        end
         ALLO2: if(!cif.dwait) nxt_state = IDLE;
         HALT: begin
-            if(iteration < 8) begin
-                if(dcaches[iteration[2:0]][0].dirty) nxt_state = FLUSH11;
-            end
+            if (cif.ccwait)nxt_state = SNOOP;
             else begin
-                if(dcaches[iteration[2:0]][1].dirty) nxt_state = FLUSH21;
+                if(iteration < 8) begin
+                    if(dcaches[iteration[2:0]][0].dirty) nxt_state = FLUSH11;
+                end
+                else begin
+                    if(dcaches[iteration[2:0]][1].dirty) nxt_state = FLUSH21;
+                end
+                if(iteration == 5'd16) begin
+                    nxt_state = END;///
+                end
+                nxt_iteration = iteration + 1;
             end
-            if(iteration == 5'd16) begin
-                nxt_state = END;///
-            end
-            nxt_iteration = iteration + 1;
         end
         FLUSH11: if(!cif.dwait) nxt_state = FLUSH12;
         FLUSH12: if(!cif.dwait) nxt_state = HALT;
@@ -118,32 +135,38 @@ always_comb begin
     dcif.flushed = (state == END);
     nxt_dcaches = dcaches;
     itera = iteration - 1;
-    cif.ccwrite = dcif.dmemWEN;
+    cif.ccwrite = 0;
+    cif.cctrans = 0;
+    shabi_miss = 0;
+    nxt_way = way;
     casez(state) 
         IDLE: begin
             //nxt_hit_counter = hit_counter;
             //if(dcif.halt) nxt_hit_counter = hit_counter;
             if(dcif.dmemWEN) begin
                 if((addr.tag == dcaches[addr.idx][0].tag)) begin
-                    if(!dcaches[addr.idx][0].dirty & dcaches[addr.idx][0].valid) begin
-                        dcif.dhit = 1;
-                        nxt_dcaches[addr.idx][0].dirty = 1;
+                    if(!dcaches[addr.idx][0].dirty /*& dcaches[addr.idx][0].valid*/) begin
+                        //dcif.dhit = 1;
                         //nxt_hit_counter = hit_counter + 1;
-                        nxt_dcaches[addr.idx][0].data[addr.blkoff] = dcif.dmemstore;
+                        //nxt_dcaches[addr.idx][0].dirty = 1;
+                        
+                        //nxt_dcaches[addr.idx][0].data[addr.blkoff] = dcif.dmemstore;
                         nxt_recent[addr.idx] = 1; // old
+
                         //Snoop signal
+                        nxt_way = 0;
                         cif.cctrans = 1;
                         cif.ccwrite = 1;
                         cif.daddr = addr;
-                        
+                        shabi_miss = 1;
                     end
-                    else if (!dcaches[addr.idx][0].valid) begin
+                    /*else if (!dcaches[addr.idx][0].valid) begin
                         miss = 1;
                         cif.cctrans = 1;
                         cif.ccwrite = 1;
                         cif.daddr = addr;
                         nxt_recent[addr.idx] = 0;//reallocate it self if invalid
-                    end 
+                    end*/
                     else begin
                         dcif.dhit = 1;
 					    nxt_dcaches[addr.idx][0].dirty = 1;
@@ -154,25 +177,26 @@ always_comb begin
                     end          
                 end
                 else if(addr.tag == dcaches[addr.idx][1].tag) begin
-                    if(!dcaches[addr.idx][1].dirty & dcaches[addr.idx][1].valid) begin
-                        dcif.dhit = 1;
-                        nxt_dcaches[addr.idx][1].dirty = 1;
+                    if(!dcaches[addr.idx][1].dirty /*& dcaches[addr.idx][1].valid*/) begin
+                        //dcif.dhit = 1;
+                        //nxt_dcaches[addr.idx][1].dirty = 1;
                         //nxt_hit_counter = hit_counter + 1;
-                        nxt_dcaches[addr.idx][1].data[addr.blkoff] = dcif.dmemstore;
+                        //nxt_dcaches[addr.idx][1].data[addr.blkoff] = dcif.dmemstore;
                         nxt_recent[addr.idx] = 0;// old
-                         //Snoop signal
+                        //Snoop signal
+                         nxt_way = 1;
                         cif.cctrans = 1;
                         cif.ccwrite = 1;
                         cif.daddr = addr;
-                        
+                        shabi_miss = 1;
                     end
-                    else if(!dcaches[addr.idx][1].valid) begin
+                    /*else if(!dcaches[addr.idx][1].valid) begin
                         miss = 1;
                         cif.cctrans = 1;
                         cif.ccwrite = 1;
                         cif.daddr = addr;
                         nxt_recent[addr.idx] = 1;//reallocate it self if invalid
-                    end
+                    end*/
                     else begin
                         dcif.dhit = 1;
 					    nxt_dcaches[addr.idx][1].dirty = 1;
@@ -188,7 +212,7 @@ always_comb begin
 					miss = 1;
                     cif.cctrans = 1;
 					//nxt_hit_counter = hit_counter - 1;
-                    //cif.ccwrite = 0;
+                    cif.ccwrite = 0;
 				end
             end
             else if(dcif.dmemREN) begin
@@ -224,7 +248,6 @@ always_comb begin
 					miss = 1;
 					//nxt_hit_counter = hit_counter - 1;
                     cif.cctrans = 1;
-                    //cif.ccwrite = 0;
 				end
             end
         end
@@ -301,7 +324,6 @@ always_comb begin
         ALLO1: begin
                 cif.dREN = 1;
                 cif.daddr = {addr.tag, addr.idx, 3'd0};
-                //cif.cctrans = 1;
                 if(recent[addr.idx] == 0) nxt_dcaches[addr.idx][0].data[0] = cif.dload; 
                 else nxt_dcaches[addr.idx][1].data[0] = cif.dload;
         end
@@ -321,10 +343,20 @@ always_comb begin
                 nxt_dcaches[addr.idx][1].data[1] = cif.dload;
             end
         end
+        WAIT1: begin
+            cif.daddr = {addr.tag, addr.idx, 3'd0};
+            nxt_dcaches[addr.idx][way].data[0] = addr.blkoff ? cif.dload :dcif.dmemstore; //load from memory or datapath
+        end
+        WAIT2: begin
+            cif.daddr = {addr.tag, addr.idx, 3'd4};
+            nxt_dcaches[addr.idx][way].dirty = 1;
+            dcif.dhit = !cif.dwait;
+            nxt_dcaches[addr.idx][way].data[1] = !addr.blkoff ? cif.dload :dcif.dmemstore; 
+        end
         //COUNT: begin
         //    cif.dWEN = 1;
         //    cif.daddr = 32'h3100;
-            //cif.dstore = hit_counter;
+        //    cif.dstore = hit_counter;
         //end
         FLUSH11: begin
             cif.dWEN = 1;

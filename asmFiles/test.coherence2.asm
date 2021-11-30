@@ -43,10 +43,11 @@ flag:
 org 0x0408
 value:
   cfw 0
-
+#word 1 starts at 40C
 word1:
   cfw 0x0000DEAD
   cfw 0
+#word 1 starts at 414
 word2:
   cfw 0x0000BEEF
 

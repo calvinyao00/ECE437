@@ -48,7 +48,7 @@ module datapath (
   alu ALU(nRST, aif);
   control_unit CONTROL(cuif);
   register_file REGISTER(CLK, nRST, rfif);
-  program_counter PC(CLK, nRST, pcif);
+  program_counter #(.PC_INIT(PC_INIT)) PC(CLK, nRST, pcif);
   if_id II(CLK, nRST, ifid);
   id_ex IE(CLK, nRST, idex);
   ex_mem EXMEM(CLK, nRST, exmemif);
@@ -258,7 +258,7 @@ module datapath (
     endcase
   end
   assign aif.op = idex.out.aluop;
-  //Memory Read/Write stagsim:/system_tb/DUT/CPU/DP/dpif/imemload
+  //Memory Read/Write stag
   assign dpif.dmemREN = exmemif.ex_mem_out.dREN;
   assign dpif.dmemWEN = exmemif.ex_mem_out.dWEN;
   assign dpif.dmemstore = exmemif.ex_mem_out.dmemstore;
