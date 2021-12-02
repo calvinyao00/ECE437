@@ -8,7 +8,7 @@
 
 mainp0:
   push  $ra                 # save return address 
-  ori   $t6, $zero, 5    # set max rands to 256
+  ori   $t6, $zero, 256    # set max rands to 256
   ori   $t9, $zero, 0x90       # set seed to 5
   ori   $t7, $zero, 0   # initialize temp reg 8 to zero (this is our counter for number of randoms generated)
 genRand:
@@ -50,7 +50,7 @@ l1:
 
 mainp1:
   push  $ra                # save return address
-  ori   $t5, $zero, 5
+  ori   $t5, $zero, 256
   ori   $t6, $zero, 0   # initialize temp reg 7 to zero (this is our counter for number of randoms generated)
 
   #initialize results
