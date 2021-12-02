@@ -155,7 +155,7 @@ always_comb begin
                 ccif.ramstore = ccif.dstore[0];
                 ccif.ramaddr = ccif.daddr[0];
                 ccif.ramWEN = ccif.dWEN[0];
-                ccif.ccwait[1] = 0;
+                ccif.ccwait[1] = 1;
             end
         end
         WB2: begin
@@ -171,7 +171,7 @@ always_comb begin
                 ccif.ramstore = ccif.dstore[0];
                 ccif.ramaddr = ccif.daddr[0];
                 ccif.ramWEN = ccif.dWEN[0];
-                ccif.ccwait[1] = 0;
+                ccif.ccwait[1] = 1;
             end
         end
         IDLE: begin

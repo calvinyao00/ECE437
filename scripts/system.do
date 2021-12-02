@@ -104,10 +104,13 @@ add wave -noupdate /system_tb/DUT/CPU/CM0/DCACHE/nxt_recent
 add wave -noupdate /system_tb/DUT/CPU/CM0/DCACHE/iteration
 add wave -noupdate /system_tb/DUT/CPU/CM0/DCACHE/nxt_iteration
 add wave -noupdate /system_tb/DUT/CPU/CM0/DCACHE/itera
-add wave -noupdate -expand /system_tb/DUT/CPU/CM0/DCACHE/addr
-add wave -noupdate -expand -subitemconfig {{/system_tb/DUT/CPU/CM0/DCACHE/dcaches[1]} -expand {/system_tb/DUT/CPU/CM0/DCACHE/dcaches[1][0]} -expand {/system_tb/DUT/CPU/CM0/DCACHE/dcaches[0]} -expand {/system_tb/DUT/CPU/CM0/DCACHE/dcaches[0][0]} -expand {/system_tb/DUT/CPU/CM0/DCACHE/dcaches[0][0].data} -expand} /system_tb/DUT/CPU/CM0/DCACHE/dcaches
+add wave -noupdate /system_tb/DUT/CPU/CM0/DCACHE/addr
+add wave -noupdate -expand -subitemconfig {{/system_tb/DUT/CPU/CM0/DCACHE/dcaches[7]} -expand {/system_tb/DUT/CPU/CM0/DCACHE/dcaches[7][1]} -expand {/system_tb/DUT/CPU/CM0/DCACHE/dcaches[7][0]} -expand {/system_tb/DUT/CPU/CM0/DCACHE/dcaches[0]} -expand {/system_tb/DUT/CPU/CM0/DCACHE/dcaches[0][0]} -expand} /system_tb/DUT/CPU/CM0/DCACHE/dcaches
 add wave -noupdate /system_tb/DUT/CPU/CM0/DCACHE/nxt_dcaches
 add wave -noupdate /system_tb/DUT/CPU/CM0/DCACHE/empty
+add wave -noupdate /system_tb/DUT/CPU/CM0/DCACHE/linkreg
+add wave -noupdate /system_tb/DUT/CPU/CM0/DCACHE/dcif/dmemload
+add wave -noupdate /system_tb/DUT/CPU/CM0/DCACHE/snoopaddr
 add wave -noupdate /system_tb/DUT/CPU/CM0/DCACHE/state
 add wave -noupdate /system_tb/DUT/CPU/CM0/DCACHE/nxt_state
 add wave -noupdate -divider EX_MEM1
@@ -117,12 +120,13 @@ add wave -noupdate -color Yellow /system_tb/DUT/CPU/DP1/exmemif/flushed
 add wave -noupdate -color Yellow /system_tb/DUT/CPU/DP1/exmemif/stallDmem
 add wave -noupdate -color Yellow /system_tb/DUT/CPU/DP1/exmemif/stall
 add wave -noupdate -color Yellow /system_tb/DUT/CPU/DP1/exmemif/ex_mem_in
-add wave -noupdate -color Yellow -expand -subitemconfig {/system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.pc {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.aluOut {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.dmemaddr {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.BrAddr {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.imemload {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.dmemstore {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.pcPlusFour {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.rdat1 {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.JumpAddr {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.rd {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.rt {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.rs {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.imm16 {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.jal {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.func {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.shamt {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.RegDst {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.opcode {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.RegWrite {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.RegSrc {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.dWEN {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.dREN {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.halt {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.flagZero {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.npc {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.pcsrc {-color Yellow -height 16}} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out
+add wave -noupdate -color Yellow -subitemconfig {/system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.pc {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.aluOut {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.dmemaddr {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.BrAddr {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.imemload {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.dmemstore {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.pcPlusFour {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.rdat1 {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.JumpAddr {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.rd {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.rt {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.rs {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.imm16 {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.jal {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.func {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.shamt {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.RegDst {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.opcode {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.RegWrite {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.RegSrc {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.dWEN {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.dREN {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.halt {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.flagZero {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.npc {-color Yellow -height 16} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out.pcsrc {-color Yellow -height 16}} /system_tb/DUT/CPU/DP1/exmemif/ex_mem_out
 add wave -noupdate -divider DCACHE1
 add wave -noupdate /system_tb/DUT/CPU/CM1/DCACHE/state
-add wave -noupdate -expand -subitemconfig {{/system_tb/DUT/CPU/CM1/DCACHE/dcaches[1]} -expand {/system_tb/DUT/CPU/CM1/DCACHE/dcaches[1][0]} -expand {/system_tb/DUT/CPU/CM1/DCACHE/dcaches[1][0].data} -expand {/system_tb/DUT/CPU/CM1/DCACHE/dcaches[0]} -expand {/system_tb/DUT/CPU/CM1/DCACHE/dcaches[0][0]} -expand} /system_tb/DUT/CPU/CM1/DCACHE/dcaches
-add wave -noupdate /system_tb/DUT/CPU/CM1/DCACHE/recent
-add wave -noupdate /system_tb/DUT/CPU/CM1/DCACHE/nxt_recent
+add wave -noupdate /system_tb/DUT/CPU/CM1/DCACHE/linkreg
+add wave -noupdate /system_tb/DUT/CPU/CM1/DCACHE/dcif/dmemload
+add wave -noupdate /system_tb/DUT/CPU/CM1/DCACHE/snoopaddr
+add wave -noupdate /system_tb/DUT/CPU/CM1/DCACHE/dcaches
 add wave -noupdate /system_tb/DUT/CPU/CM1/DCACHE/iteration
 add wave -noupdate /system_tb/DUT/CPU/CM1/DCACHE/nxt_iteration
 add wave -noupdate /system_tb/DUT/CPU/CM1/DCACHE/itera
@@ -193,7 +197,6 @@ add wave -noupdate /system_tb/DUT/CPU/DP0/huif/exmem_RegWrite
 add wave -noupdate /system_tb/DUT/CPU/DP0/huif/idex_RegWrite
 add wave -noupdate /system_tb/DUT/CPU/DP0/huif/flushed
 add wave -noupdate /system_tb/DUT/CPU/DP0/huif/PCsrc
-add wave -noupdate /system_tb/DUT/CPU/DP0/huif/hazard
 add wave -noupdate /system_tb/DUT/CPU/DP0/huif/rs
 add wave -noupdate /system_tb/DUT/CPU/DP0/huif/rt
 add wave -noupdate /system_tb/DUT/CPU/DP0/huif/exmem_rd
@@ -216,9 +219,8 @@ add wave -noupdate -divider halt
 add wave -noupdate /system_tb/DUT/CPU/DP0/halt
 add wave -noupdate /system_tb/DUT/CPU/DP0/nxt_halt
 add wave -noupdate /system_tb/DUT/CPU/DP0/memwbif/mem_wb_out.halt
-add wave -noupdate /system_tb/DUT/CPU/CM1/dcif/dmemstore
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {2626206 ps} 0}
+WaveRestoreCursors {{Cursor 1} {165902609 ps} 0}
 quietly wave cursor active 1
 configure wave -namecolwidth 303
 configure wave -valuecolwidth 100
@@ -234,4 +236,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {2323600 ps} {3246600 ps}
+WaveRestoreZoom {65543100 ps} {284020100 ps}

@@ -67,8 +67,8 @@ always_comb begin
             else if(shabi_miss & !cif.ccinv)
                 nxt_state = WAIT1;
             else if(miss& !cif.ccinv) begin
-                if(recent[addr.idx] == 0) nxt_state = (dcaches[addr.idx][0].dirty) ? WB1 : ALLO1;
-                else if(recent[addr.idx] == 1) nxt_state = (dcaches[addr.idx][1].dirty) ? WB1 : ALLO1;
+                if(nxt_recent[addr.idx] == 0) nxt_state = (dcaches[addr.idx][0].dirty) ? WB1 : ALLO1;
+                else if(nxt_recent[addr.idx] == 1) nxt_state = (dcaches[addr.idx][1].dirty) ? WB1 : ALLO1;
             end
         end
         SNOOP: begin
@@ -76,7 +76,7 @@ always_comb begin
                 if (dcaches[snoopaddr.idx][0].dirty) nxt_state = SHARE1;
                 else if (!dcaches[snoopaddr.idx][0].dirty) nxt_state = IDLE;
             end
-            else if(addr.tag == dcaches[snoopaddr.idx][1].tag) begin
+            else if(snoopaddr.tag == dcaches[snoopaddr.idx][1].tag && dcaches[snoopaddr.idx][1].valid) begin
                 if (dcaches[snoopaddr.idx][1].dirty) nxt_state = SHARE1;
                 else if (!dcaches[snoopaddr.idx][1].dirty) nxt_state = IDLE;
             end
@@ -95,7 +95,7 @@ always_comb begin
             if (!cif.dwait) nxt_state = IDLE;
         end
         WB1: if(!cif.dwait) nxt_state = WB2;
-        WB2: if(!cif.dwait) nxt_state = ALLO1;
+        WB2: if(!cif.dwait) nxt_state = IDLE;
         ALLO1: begin
             if(!cif.dwait) nxt_state = ALLO2;
         end
@@ -198,7 +198,7 @@ always_comb begin
                     end
                     else dcif.dhit = 1;
                 end
-                else if(!dcif.datomic) begin
+                else begin
 					if (dcif.dmemaddr == linkreg) begin
 						nxt_linkreg = 0;
 					end
@@ -253,7 +253,6 @@ always_comb begin
 					nxt_linkreg = dcif.dmemaddr;
 				end
                 if ((addr.tag == dcaches[addr.idx][0].tag)) begin
-
                     if (dcaches[addr.idx][0].valid) begin
                         dcif.dhit = 1;
                         //nxt_hit_counter = hit_counter + 1;
@@ -289,7 +288,7 @@ always_comb begin
             end
         end
         SNOOP: begin
-            if (word_t'(snoopaddr) == linkreg) nxt_linkreg = '0;
+            if (word_t'(snoopaddr) == linkreg && cif.ccinv) nxt_linkreg = '0;
             if((snoopaddr.tag == dcaches[snoopaddr.idx][0].tag) && (dcaches[snoopaddr.idx][0].valid)) begin
                 if (cif.ccinv) begin
                     nxt_dcaches[snoopaddr.idx][0].valid = 0;
@@ -351,10 +350,12 @@ always_comb begin
         WB2: begin
             cif.dWEN = 1;
             if(recent[addr.idx] == 0) begin
+                nxt_dcaches[addr.idx][0].dirty = 0;
                 cif.dstore = dcaches[addr.idx][0].data[1];
                 cif.daddr = {dcaches[addr.idx][0].tag, addr.idx, 3'd4};
             end
             else if(recent[addr.idx] == 1) begin
+                nxt_dcaches[addr.idx][1].dirty = 0;
                 cif.dstore = dcaches[addr.idx][1].data[1];
                 cif.daddr = {dcaches[addr.idx][1].tag, addr.idx, 3'd4};
             end
@@ -389,7 +390,8 @@ always_comb begin
             cif.daddr = {addr.tag, addr.idx, 3'd4};
             nxt_dcaches[addr.idx][way].dirty = 1;
             dcif.dhit = !cif.dwait;
-            nxt_linkreg = '0;
+            nxt_dcaches[addr.idx][way].valid = 1;
+            nxt_linkreg = dcif.datomic && !cif.dwait ? '0: linkreg;
             nxt_dcaches[addr.idx][way].data[1] = !addr.blkoff ? cif.dload :dcif.dmemstore; 
         end
         //COUNT: begin
