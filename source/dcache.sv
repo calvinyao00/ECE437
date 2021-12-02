@@ -17,6 +17,7 @@ logic miss, hit, shabi_miss;
 logic way, nxt_way;
 logic [7:0] recent, nxt_recent;
 logic [4:0] iteration, nxt_iteration, itera;
+word_t linkreg, nxt_linkreg;
 dcachef_t addr;
 dcachef_t snoopaddr;
 //word_t hit_counter, nxt_hit_counter;
@@ -41,6 +42,7 @@ always_ff @(posedge CLK, negedge nRST) begin
         iteration <= '0;
         recent <= 0;
         way <= 0;
+        linkreg <= '0;
     end
     else begin
         state <= nxt_state;
@@ -49,6 +51,7 @@ always_ff @(posedge CLK, negedge nRST) begin
         iteration <= nxt_iteration;
         recent <= nxt_recent;
         way <= nxt_way;
+        linkreg <= nxt_linkreg;
     end
 end
 
@@ -58,12 +61,12 @@ always_comb begin
     nxt_iteration = iteration;
     casez(state)
         IDLE: begin
-            if(dcif.halt) nxt_state = HALT;
-            else if(cif.ccwait)
-                nxt_state = SNOOP;
-            else if(shabi_miss)
+            if(cif.ccwait) nxt_state = SNOOP;
+            else if(dcif.halt)
+                nxt_state = HALT;
+            else if(shabi_miss & !cif.ccinv)
                 nxt_state = WAIT1;
-            else if(miss) begin
+            else if(miss& !cif.ccinv) begin
                 if(recent[addr.idx] == 0) nxt_state = (dcaches[addr.idx][0].dirty) ? WB1 : ALLO1;
                 else if(recent[addr.idx] == 1) nxt_state = (dcaches[addr.idx][1].dirty) ? WB1 : ALLO1;
             end
@@ -95,11 +98,11 @@ always_comb begin
         WB2: if(!cif.dwait) nxt_state = ALLO1;
         ALLO1: begin
             if(!cif.dwait) nxt_state = ALLO2;
-            //if(cif.ccwait) nxt_state = SNOOP;
         end
         ALLO2: if(!cif.dwait) nxt_state = IDLE;
         HALT: begin
             if (cif.ccwait)nxt_state = SNOOP;
+            else if (cif.ccinv)nxt_state = IDLE;
             else begin
                 if(iteration < 8) begin
                     if(dcaches[iteration[2:0]][0].dirty) nxt_state = FLUSH11;
@@ -117,7 +120,6 @@ always_comb begin
         FLUSH12: if(!cif.dwait) nxt_state = HALT;
         FLUSH21: if(!cif.dwait) nxt_state = FLUSH22;
         FLUSH22: if(!cif.dwait) nxt_state = HALT;
-        //COUNT: if(!cif.dwait) nxt_state = END;
     endcase
 end
 
@@ -129,7 +131,7 @@ always_comb begin
     cif.dWEN = 0;
     cif.daddr = '0;
     cif.dstore = '0;
-    dcif.dmemload = '0;
+    dcif.dmemload = (dcif.datomic & dcif.dmemWEN) ? ((dcif.dmemaddr == linkreg)?32'h1 :'0): '0;
     nxt_recent = recent;
     //nxt_hit_counter = hit_counter;
     dcif.flushed = (state == END);
@@ -139,84 +141,119 @@ always_comb begin
     cif.cctrans = 0;
     shabi_miss = 0;
     nxt_way = way;
+    nxt_linkreg = linkreg;
     casez(state) 
         IDLE: begin
             //nxt_hit_counter = hit_counter;
             //if(dcif.halt) nxt_hit_counter = hit_counter;
             if(dcif.dmemWEN) begin
-                if((addr.tag == dcaches[addr.idx][0].tag)) begin
-                    if(!dcaches[addr.idx][0].dirty /*& dcaches[addr.idx][0].valid*/) begin
-                        //dcif.dhit = 1;
-                        //nxt_hit_counter = hit_counter + 1;
-                        //nxt_dcaches[addr.idx][0].dirty = 1;
-                        
-                        //nxt_dcaches[addr.idx][0].data[addr.blkoff] = dcif.dmemstore;
-                        nxt_recent[addr.idx] = 1; // old
-
-                        //Snoop signal
-                        nxt_way = 0;
-                        cif.cctrans = 1;
-                        cif.ccwrite = 1;
-                        cif.daddr = addr;
-                        shabi_miss = 1;
+                if (dcif.datomic) begin
+                    if(dcif.dmemaddr == linkreg) begin
+                        if((addr.tag == dcaches[addr.idx][0].tag)) begin
+                            if(!dcaches[addr.idx][0].dirty /*& dcaches[addr.idx][0].valid*/) begin
+                                nxt_recent[addr.idx] = 1; // old
+                                //Snoop signal
+                                nxt_way = 0;//Remember which way to update.
+                                cif.cctrans = 1;
+                                cif.ccwrite = 1;
+                                cif.daddr = addr;
+                                shabi_miss = 1;// Generate a BusRdx
+                            end
+                            else begin
+						        nxt_linkreg = 0;
+                                dcif.dhit = 1;
+					            nxt_dcaches[addr.idx][0].dirty = 1;
+                                //nxt_hit_counter = hit_counter + 1;
+                                nxt_dcaches[addr.idx][0].data[addr.blkoff] = dcif.dmemstore;
+                                nxt_recent[addr.idx] = 1; // old
+                                //nxt_hit_counter = hit_counter - 1;
+                            end          
+                        end
+                        else if(addr.tag == dcaches[addr.idx][1].tag) begin
+                            if(!dcaches[addr.idx][1].dirty /*& dcaches[addr.idx][1].valid*/) begin
+                                nxt_recent[addr.idx] = 0;// replace itself.
+                                //Snoop signal
+                                nxt_way = 1;//Remember which way to update.
+                                cif.cctrans = 1;
+                                cif.ccwrite = 1;
+                                cif.daddr = addr;
+                                shabi_miss = 1;
+                            end
+                            else begin
+						        nxt_linkreg = 0;
+                                dcif.dhit = 1;
+					            nxt_dcaches[addr.idx][1].dirty = 1;
+                                //nxt_hit_counter = hit_counter + 1;
+                                nxt_dcaches[addr.idx][1].data[addr.blkoff] = dcif.dmemstore;
+                                nxt_recent[addr.idx] = 0; // old
+                                //nxt_hit_counter = hit_counter - 1;
+                            end
+                        end
+                        else begin
+					        miss = 1;
+                            cif.cctrans = 1;
+					        //nxt_hit_counter = hit_counter - 1;
+                            cif.ccwrite = 0;
+				        end
                     end
-                    /*else if (!dcaches[addr.idx][0].valid) begin
-                        miss = 1;
-                        cif.cctrans = 1;
-                        cif.ccwrite = 1;
-                        cif.daddr = addr;
-                        nxt_recent[addr.idx] = 0;//reallocate it self if invalid
-                    end*/
-                    else begin
-                        dcif.dhit = 1;
-					    nxt_dcaches[addr.idx][0].dirty = 1;
-                        //nxt_hit_counter = hit_counter + 1;
-                        nxt_dcaches[addr.idx][0].data[addr.blkoff] = dcif.dmemstore;
-                        nxt_recent[addr.idx] = 1; // old
-                        //nxt_hit_counter = hit_counter - 1;
-                    end          
+                    else dcif.dhit = 1;
                 end
-                else if(addr.tag == dcaches[addr.idx][1].tag) begin
-                    if(!dcaches[addr.idx][1].dirty /*& dcaches[addr.idx][1].valid*/) begin
-                        //dcif.dhit = 1;
-                        //nxt_dcaches[addr.idx][1].dirty = 1;
-                        //nxt_hit_counter = hit_counter + 1;
-                        //nxt_dcaches[addr.idx][1].data[addr.blkoff] = dcif.dmemstore;
-                        nxt_recent[addr.idx] = 0;// old
-                        //Snoop signal
-                         nxt_way = 1;
-                        cif.cctrans = 1;
-                        cif.ccwrite = 1;
-                        cif.daddr = addr;
-                        shabi_miss = 1;
+                else if(!dcif.datomic) begin
+					if (dcif.dmemaddr == linkreg) begin
+						nxt_linkreg = 0;
+					end
+                    if((addr.tag == dcaches[addr.idx][0].tag)) begin
+                        if(!dcaches[addr.idx][0].dirty /*& dcaches[addr.idx][0].valid*/) begin
+                            nxt_recent[addr.idx] = 1; // old
+                            //Snoop signal
+                            nxt_way = 0;//Remember which way to update.
+                            cif.cctrans = 1;
+                            cif.ccwrite = 1;
+                            cif.daddr = addr;
+                            shabi_miss = 1;// Generate a BusRdx
+                        end
+                        else begin
+                            dcif.dhit = 1;
+					        nxt_dcaches[addr.idx][0].dirty = 1;
+                            //nxt_hit_counter = hit_counter + 1;
+                            nxt_dcaches[addr.idx][0].data[addr.blkoff] = dcif.dmemstore;
+                            nxt_recent[addr.idx] = 1; // old
+                            //nxt_hit_counter = hit_counter - 1;
+                        end          
                     end
-                    /*else if(!dcaches[addr.idx][1].valid) begin
-                        miss = 1;
-                        cif.cctrans = 1;
-                        cif.ccwrite = 1;
-                        cif.daddr = addr;
-                        nxt_recent[addr.idx] = 1;//reallocate it self if invalid
-                    end*/
+                    else if(addr.tag == dcaches[addr.idx][1].tag) begin
+                        if(!dcaches[addr.idx][1].dirty /*& dcaches[addr.idx][1].valid*/) begin
+                            nxt_recent[addr.idx] = 0;// replace itself.
+                            //Snoop signal
+                            nxt_way = 1;//Remember which way to update.
+                            cif.cctrans = 1;
+                            cif.ccwrite = 1;
+                            cif.daddr = addr;
+                            shabi_miss = 1;
+                        end
+                        else begin
+                            dcif.dhit = 1;
+					        nxt_dcaches[addr.idx][1].dirty = 1;
+                            //nxt_hit_counter = hit_counter + 1;
+                            nxt_dcaches[addr.idx][1].data[addr.blkoff] = dcif.dmemstore;
+                            nxt_recent[addr.idx] = 0; // old
+                            //nxt_hit_counter = hit_counter - 1;
+                        end
+                    end
                     else begin
-                        dcif.dhit = 1;
-					    nxt_dcaches[addr.idx][1].dirty = 1;
-                        //nxt_hit_counter = hit_counter + 1;
-                        nxt_dcaches[addr.idx][1].data[addr.blkoff] = dcif.dmemstore;
-                        nxt_recent[addr.idx] = 0; // old
-                        //nxt_hit_counter = hit_counter - 1;
-                    end
-                    //cif.cctrans = dcaches[addr.idx][0].dirty ? 0:1;
-                    //cif.ccwrite = 1;
+					    miss = 1;
+                        cif.cctrans = 1;
+					    //nxt_hit_counter = hit_counter - 1;
+                        cif.ccwrite = 0;
+				    end
                 end
-                else begin
-					miss = 1;
-                    cif.cctrans = 1;
-					//nxt_hit_counter = hit_counter - 1;
-                    cif.ccwrite = 0;
-				end
             end
             else if(dcif.dmemREN) begin
+                if (dcif.datomic) begin
+					nxt_linkreg = dcif.dmemaddr;
+				end
                 if ((addr.tag == dcaches[addr.idx][0].tag)) begin
+
                     if (dcaches[addr.idx][0].valid) begin
                         dcif.dhit = 1;
                         //nxt_hit_counter = hit_counter + 1;
@@ -252,6 +289,7 @@ always_comb begin
             end
         end
         SNOOP: begin
+            if (word_t'(snoopaddr) == linkreg) nxt_linkreg = '0;
             if((snoopaddr.tag == dcaches[snoopaddr.idx][0].tag) && (dcaches[snoopaddr.idx][0].valid)) begin
                 if (cif.ccinv) begin
                     nxt_dcaches[snoopaddr.idx][0].valid = 0;
@@ -351,6 +389,7 @@ always_comb begin
             cif.daddr = {addr.tag, addr.idx, 3'd4};
             nxt_dcaches[addr.idx][way].dirty = 1;
             dcif.dhit = !cif.dwait;
+            nxt_linkreg = '0;
             nxt_dcaches[addr.idx][way].data[1] = !addr.blkoff ? cif.dload :dcif.dmemstore; 
         end
         //COUNT: begin

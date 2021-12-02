@@ -237,41 +237,12 @@ always_comb begin
         IFETCH: begin
             ccif.iload[irequestor] = ccif.ramstate ==  ACCESS ? ccif.ramload : '0;
             ccif.iwait[irequestor] = ccif.ramstate != ACCESS;
-            ccif.ramREN = ccif.iREN[irequestor];
+            ccif.ramREN = 1;
             ccif.ramaddr = ccif.iaddr[irequestor];
+            ccif.ccinv = 2'b11;
         end
     endcase
 end
- /*  always_comb begin
-    ccif.dwait = 0;
-    ccif.iload = '0;
-    ccif.dload = '0;
-    ccif.ramstore = '0;
-    ccif.ramaddr = '0; //////'0
-    ccif.ramWEN = 0;
-    ccif.ramREN = 0;
-    ccif.ccwait = 0;
-    ccif.ccinv = 0;
-    ccif.ccsnoopaddr = '0;
-    if (ccif.dREN) begin
-      ccif.ramREN = ccif.dREN;
-      ccif.ramaddr = ccif.daddr;
-      ccif.dwait = (ccif.ramstate == BUSY || ccif.ramstate == ERROR);
-      ccif.dload = ccif.ramload;
-    end
-    else if(ccif.dWEN) begin
-      ccif.ramWEN = ccif.dWEN;
-      ccif.ramaddr = ccif.daddr;
-      ccif.dwait = (ccif.ramstate == BUSY || ccif.ramstate == ERROR);
-      ccif.ramstore = ccif.dstore;
-    end
-    else if (ccif.iREN) begin
-      ccif.ramREN = ccif.iREN;
-      ccif.ramaddr = ccif.iaddr;
-      ccif.iload = (ccif.ramstate == ACCESS) ? ccif.ramload : 0;
-    end
 
-    ccif.iwait = (ccif.ramstate == ACCESS) ? !(!ccif.dREN && !ccif.dWEN && ccif.iREN) : 1;
-  end */
 
 endmodule

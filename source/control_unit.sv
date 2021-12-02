@@ -163,18 +163,20 @@ always_comb begin
                 cuif.aluop = ALU_ADD;
                 cuif.ALUsrc = 2'd2;
             end
-	    LL: begin
-		cuif.RegSrc = 2'b10;
+	        LL: begin
+		        cuif.RegSrc = 2'b10;
                 cuif.RegWrite = 1;
                 cuif.dREN = 1;
                 cuif.aluop = ALU_ADD;
                 cuif.ALUsrc = 2'd2;
-	    end
-	    SC : begin
-		cuif.dWEN = 1;
+	        end
+	        SC : begin
+		        cuif.dWEN = 1;
                 cuif.aluop = ALU_ADD;
                 cuif.ALUsrc = 2'd2;
-	    end
+                cuif.RegWrite = 1;
+                cuif.RegSrc = 2'b10;
+	        end
             HALT: begin
                 cuif.halt = 1'b1;
             end

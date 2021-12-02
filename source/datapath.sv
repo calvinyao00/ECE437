@@ -208,6 +208,7 @@ module datapath (
   assign fuif.memwb_RegWrite = memwbif.mem_wb_out.RegWrite;
   assign fuif.exmem_write = (exmemif.ex_mem_out.RegDst) ? exmemif.ex_mem_out.rt : (exmemif.ex_mem_out.pcsrc == 3'd3) ? 5'b11111 : exmemif.ex_mem_out.rd;
   assign fuif.memwb_write = (memwbif.mem_wb_out.RegDst) ? memwbif.mem_wb_out.rt : (memwbif.mem_wb_out.pcsrc == 3'd3) ? 5'b11111 : memwbif.mem_wb_out.rd;
+  assign dpif.datomic = (exmemif.ex_mem_out.imemload[31:26] == LL) || (exmemif.ex_mem_out.imemload[31:26] == SC);
   // decide exmem output
   always_comb begin
     exmem_forward = 0;
@@ -222,7 +223,6 @@ module datapath (
   //instruction fetch
   assign dpif.imemREN = 1;
   //assign dpif.imemaddr = exmemif.ex_mem_out.newPc; 
-  //////////////////assign dpif.imemaddr = pcif.newpc; 
   assign dpif.imemaddr = pcif.PC; 
 
   // Control Unit & instruction decode stage
@@ -275,13 +275,7 @@ module datapath (
       2'b11:rfif.wdat = memwbif.mem_wb_out.pcPlusFour;
     endcase
   end
-/*   always_comb begin
-    if(cuif.RegSrc == 2'b1) rfif.wdat = {cuif.imm[15:0], 16'b0};
-    else if(cuif.RegSrc == 2'b10) rfif.wdat = dpif.dmemload; // memtoreg
-    else if(cuif.RegSrc == 2'b11) rfif.wdat = pcif.npc;
-    else rfif.wdat = aif.portOut;
-  end
-  assign rfif.wsel = (cuif.RegDst == 0) ? cuif.rd : cuif.rt; */
+
  
 
   // PC DUT

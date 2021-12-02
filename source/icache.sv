@@ -58,8 +58,9 @@ module icache(
             dcif.ihit = 0;
 		    //dcif.imemload = 0;
             next_icaches = 0;
+            cif.iREN = 0;
         end
-        if(dcif.imemREN && !dcif.dmemREN && !dcif.dmemWEN) begin
+        else if(dcif.imemREN && !dcif.dmemREN && !dcif.dmemWEN) begin
             //dcif.ihit = (ihit || cache_hit);
             //Hit
             if (icaches[addr.idx].tag == addr.tag && icaches[addr.idx].valid) begin
